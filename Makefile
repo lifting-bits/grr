@@ -2,8 +2,8 @@
 
 .PHONY: all clean
 
-GRANARY_CC ?= clang-3.6
-GRANARY_CXX ?= clang++-3.6
+GRANARY_CC ?= clang-3.8
+GRANARY_CXX ?= clang++-3.8
 
 # Where is Granary's source code located?
 GRANARY_SRC_DIR ?= $(shell pwd)

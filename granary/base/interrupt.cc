@@ -34,6 +34,8 @@ InterruptState::InterruptState(bool is_interruptible_, bool is_ignorable_)
 
 InterruptState::~InterruptState(void) {
 
+  gInterruptState = prev_state;
+
   // We've got a pending signal that we haven't handled yet. Either handle it
   // or up-propagate it.
   if (pending_signal && !is_done) {
@@ -46,12 +48,8 @@ InterruptState::~InterruptState(void) {
     } else {
       is_done = true;
       raise(pending_signal);
-
-      //GRANARY_ASSERT(false && "Unable to deliver pending signal (2).");
     }
   }
-
-  gInterruptState = prev_state;
 }
 
 }  // namespace detail

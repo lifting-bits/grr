@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <gflags/gflags.h>
 
@@ -76,6 +77,9 @@ DEFINE_string(output_coverage_file, "/dev/null",
               "/dev/null is specified then the coverage file is not "
               "mapped, but coverage instrumentation is enabled.");
 
+DEFINE_bool(print_num_mutations, false,
+            "Print out the number of mutations evaluated.");
+
 namespace granary {
 
 std::string gInput = "";
@@ -86,6 +90,10 @@ namespace {
 enum {
   kGiveUpAfterEmptyMutations = 5
 };
+
+static uintptr_t gNumMutations = 0;
+static uintptr_t gTotalInputBytes = 0;
+static uintptr_t gTotalInputBytesRead = 0;
 
 static input::IORecording *gRecordToMutate = nullptr;
 
@@ -225,6 +233,11 @@ static bool RunTestCase(const granary::os::SnapshotGroup &snapshot_group) {
     // been processed and therefore cannot contribute new information to a
     // downstream tool.
     if (mutating) {
+      if (!first_execution) {
+        ++gNumMutations;
+        gTotalInputBytes += gInput.size();
+        gTotalInputBytesRead += input::gRecord->num_input_bytes;
+      }
       if (!first_execution && (is_crash || covered_new_code)) {
         output = input::gRecord->ToInput();
       }
@@ -464,6 +477,11 @@ extern "C" int main(int argc, char **argv, char **) {
   cache::Exit();
   code::ExitPathCoverage();
   code::ExitBranchTracer();
+
+  if (FLAGS_print_num_mutations) {
+    std::cout << gNumMutations << " " << gTotalInputBytes << " "
+              << gTotalInputBytesRead;
+  }
 
   return EXIT_SUCCESS;
 }

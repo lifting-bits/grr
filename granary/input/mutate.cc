@@ -294,7 +294,7 @@ class ConcatMutator : public Mutator {
  private:
   static IORecording *ConcatTestCase(const IORecording *record_) {
     auto test = new IORecording;
-    test->AddInput(std::move(record_->ToInput()));
+    test->AddInput(record_->ToInput());
     return test;
   }
 

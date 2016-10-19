@@ -240,7 +240,8 @@ static int OpenSnapshotFile(int exe_num, bool create) {
   return fd;
 }
 
-static char * const gArgvEnvp[] = {nullptr};
+static char * const gArgv[] = {nullptr};
+static const char * const gArgvEnvp[] = {"LD_BIND_NOW=1"};
 
 // Initialize the snapshot file.
 static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
@@ -350,7 +351,7 @@ static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
 
   } else {
     EnableTracing();
-    execve(exe_name, gArgvEnvp, gArgvEnvp);
+    execve(exe_name, gArgv, const_cast<char **>(gArgvEnvp));
     GRANARY_ASSERT(false && "Unable to `exec` process.");
     __builtin_unreachable();
   }

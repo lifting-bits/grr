@@ -387,12 +387,15 @@ static bool UpdateSet(const FileTable &files,
   auto max_fd = static_cast<size_t>(nfds);
   for (auto fd = 0UL; fd < max_fds; ++fd) {
     if (DECREE_FD_ISSET(fd, set)) {
-      if (fd >= max_fd) return false;
+      if (fd >= max_fd) {
+        return false;
+      }
       if (3 <= fd && (files[fd]->*will_block)(proc)) {
         DECREE_FD_CLR(fd, set);
 
       } else {
-        if (is_read && 2 > fd && gInputIndex >= gInput.size()) {
+        if (is_read && 2 > fd &&
+            (gInputIndex >= gInput.size() && !gInput.empty())) {
           DECREE_FD_CLR(fd, set);
 
         } else {

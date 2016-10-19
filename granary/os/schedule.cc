@@ -86,7 +86,9 @@ static void CatchInterrupt(int sig, siginfo_t *, void *) {
   // No idea where we are. We're going to try to just return from wherever
   // we are and hope for the best!
   } else if (!gSigTermStateValid) {
-    if (!gSigTermSignal && SIGUSR1 != sig) gSigTermSignal = sig;
+    if (!gSigTermSignal && SIGUSR1 != sig) {
+      gSigTermSignal = sig;
+    }
     gIsRunning = false;
     return;
 
