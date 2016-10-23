@@ -12,7 +12,6 @@ void InitPathCoverage(void);
 void BeginPathCoverage(void);
 void EndPathCoverage(void);
 void ExitPathCoverage(void);
-void ResetPathCoverage(void);
 bool CoveredNewPaths(void);
 std::string PathCoverageHash(void);
 void MarkCoveredInputLength(void);

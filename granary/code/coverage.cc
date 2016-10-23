@@ -1,26 +1,32 @@
 /* Copyright 2016 Peter Goodman (peter@trailofbits.com), all rights reserved. */
 
 
-#include "granary/os/page.h"
-
-#include "granary/code/instrument.h"
-#include "granary/code/coverage.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <gflags/gflags.h>
 
-#include <set>
+#include <algorithm>
+#include <map>
 #include <sstream>
 
-#include <gflags/gflags.h>
-#include "../../third_party/md5/md5.h"
+#include "granary/os/page.h"
+
+#include "granary/code/instrument.h"
+#include "granary/code/coverage.h"
+
+#include "third_party/md5/md5.h"
+
 
 DECLARE_bool(path_coverage);
 DECLARE_string(coverage_file);
 DECLARE_string(output_coverage_file);
+
+DEFINE_bool(count_path_executions, true,
+            "Count the order of magnitude of number of times each path "
+            "is executed.");
 
 namespace granary {
 
@@ -50,11 +56,15 @@ struct PathEntry {
   }
 } __attribute__((packed));
 
+struct CountedPathEntry : public PathEntry {
+  uint32_t count;
+} __attribute__((packed));
+
 namespace {
 
-static std::set<PathEntry> gAllPaths;
-static std::set<PathEntry> gAllPathsAtInit;
-static std::set<PathEntry> gCurrPaths;
+static std::map<PathEntry, uint32_t> gAllPaths;
+static std::map<PathEntry, uint32_t> gAllPathsAtInit;
+static std::map<PathEntry, uint32_t> gCurrPaths;
 
 static bool gHasNewPathCoverage = false;
 static bool gInputLengthMarked = false;
@@ -64,11 +74,16 @@ enum : size_t {
   kMaxNumBufferedPathEntries = 4096
 };
 
+// log2ish(n) = int(log2(n)) + 1
+static inline uint32_t log2ish(uint32_t x) {
+  return x ? 32U - static_cast<uint32_t>(__builtin_clz(x)) : 0;
+}
+
 }  // namespace
 
 extern "C" {
 
-PathEntry gPathEntries[kMaxNumBufferedPathEntries] = {};
+CountedPathEntry gPathEntries[kMaxNumBufferedPathEntries] = {};
 unsigned gNextPathEntry = 0;
 
 // Used for path tracing.
@@ -80,17 +95,28 @@ extern void UpdateCoverageSet(void) {
     return;
   }
   gNextPathEntry = 0;
-  auto old_size = gAllPaths.size();
   for (auto &entry : gPathEntries) {
-    if (!entry.block_pc_of_branch) {
+    if (!entry.count) {
       break;
     }
-    gAllPaths.insert(entry);  // Cross code-coverage paths.
-    gCurrPaths.insert(entry);  // Execution-specific paths.
-    entry = {0, 0, 0};
-  }
 
-  gHasNewPathCoverage = gHasNewPathCoverage || gAllPaths.size() != old_size;
+    PathEntry *uncounted_entry = &entry;
+
+    auto &count = gCurrPaths[*uncounted_entry];
+    auto &all_count = gAllPaths[*uncounted_entry];
+    if (FLAGS_count_path_executions) {
+      count += entry.count;
+      const auto log_count = log2ish(count);
+
+      // Executed some path an order of magnitude more than before.
+      if (all_count < log_count) {
+        gHasNewPathCoverage = true;
+        all_count = log_count;
+      }
+    }
+
+    entry = {};
+  }
 }
 
 }  // extern C
@@ -130,34 +156,35 @@ void InitPathCoverage(void) {
   }
 
   // Verify that we have the right number of entries.
-  GRANARY_ASSERT(0 == (size % sizeof(PathEntry)));
+  GRANARY_ASSERT(0 == (size % sizeof(CountedPathEntry)));
 
-  auto num_entries = size / sizeof(PathEntry);
+  auto num_entries = size / sizeof(CountedPathEntry);
   for (size_t i = 0; i < num_entries; ) {
     auto bytes_read_ = read(fd, &(gPathEntries[0]), sizeof(gPathEntries));
     GRANARY_ASSERT(!errno && "Unable to read path entries.");
 
     // Figure out how many entries we've read.
     auto bytes_read = static_cast<size_t>(bytes_read_);
-    auto num_entries_read = bytes_read / sizeof(PathEntry);
+    auto num_entries_read = bytes_read / sizeof(CountedPathEntry);
     GRANARY_ASSERT(num_entries_read < kMaxNumBufferedPathEntries);
 
     i += num_entries_read;
 
     // We didn't read a complete number of entries; back us up.
     if (0 != (bytes_read % sizeof(PathEntry))) {
-      lseek(fd, static_cast<off_t>(i * sizeof(PathEntry)), SEEK_SET);
+      lseek(fd, static_cast<off_t>(i * sizeof(CountedPathEntry)), SEEK_SET);
       GRANARY_ASSERT(!errno && "Unable to seek to valid path entry.");
     }
 
     // Process the entries that we have read.
     for (size_t e = 0; e < num_entries_read; ++e) {
-      gAllPathsAtInit.insert(gPathEntries[e]);
+      PathEntry *uncounted_entry = &gPathEntries[e];
+      gAllPathsAtInit[*uncounted_entry] = gPathEntries[e].count;
+      gPathEntries[e] = {};
     }
   }
 
   close(fd);
-  ResetPathCoverage();
 }
 
 void BeginPathCoverage(void) {
@@ -166,6 +193,7 @@ void BeginPathCoverage(void) {
   gNextPathEntry = 0;
   gHasNewPathCoverage = false;
   gCurrPaths.clear();
+  gAllPaths = gAllPathsAtInit;
   memset(&(gPathEntries[0]), 0, sizeof(gPathEntries));
 }
 
@@ -200,8 +228,14 @@ void ExitPathCoverage(void) {
   GRANARY_ASSERT(!errno && "Unable to open a coverage file.");
 
   for (const auto &entry : gAllPaths) {
-    if (entry.block_pc_of_branch) {
-      write(fd, &(entry), sizeof(entry));
+    if (entry.second) {
+      GRANARY_ASSERT(entry.second >= gAllPathsAtInit[entry.first] &&
+                     "Invalid path counting!");
+
+      CountedPathEntry counted_entry = {};
+      *reinterpret_cast<PathEntry *>(&counted_entry) = entry.first;
+      counted_entry.count = entry.second;
+      write(fd, &counted_entry, sizeof(counted_entry));
     }
   }
 
@@ -209,15 +243,15 @@ void ExitPathCoverage(void) {
   rename(cov_file.c_str(), FLAGS_output_coverage_file.c_str());
 }
 
-void ResetPathCoverage(void) {
-  gAllPaths = gAllPathsAtInit;
-}
-
 std::string PathCoverageHash(void) {
   MD5 hash;
   for (const auto &entry : gCurrPaths) {
-    if (entry.block_pc_of_branch) {
-      hash.update(reinterpret_cast<const char *>(&entry), sizeof(entry));
+    if (entry.second) {
+      CountedPathEntry counted_entry = {};
+      *reinterpret_cast<PathEntry *>(&counted_entry) = entry.first;
+      counted_entry.count = log2ish(entry.second);
+      hash.update(reinterpret_cast<const char *>(&counted_entry),
+                  sizeof(counted_entry));
     }
   }
 

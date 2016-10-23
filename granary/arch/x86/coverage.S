@@ -29,7 +29,7 @@
     .type CoverPath, @function
 CoverPath:
     .cfi_startproc
-    pushf
+    pushfq
 
     // If we haven't read any input then it's not possible to have any
     // input-dependent code coverage.
@@ -47,12 +47,13 @@ add_entry:
     mov dword ptr [r11 + r13 + 0], r12d  // Prev branch EIP.
     mov dword ptr [r11 + r13 + 4], r14d  // Block EIP
     mov dword ptr [r11 + r13 + 8], r10d  // Target EIP
+    mov dword ptr [r11 + r13 + 12], 1  // Exec count
 
     // Move to the next path entry.
-    add dword ptr [RIP + gNextPathEntry], 3 * 4
+    add dword ptr [RIP + gNextPathEntry], 4 * 4
 
 done:
-    popf
+    popfq
     ret
 
 update_coverage_map:
@@ -72,7 +73,17 @@ update_coverage_map:
     push r14
     push r15
 
+    push r15  // For alignment
+
+    // push rsp
+    // push [rsp]
+    // and rsp, -16
+
+
     call    UpdateCoverageSet
+
+    // pop rsp
+    pop r15
 
     pop r15
     pop r14

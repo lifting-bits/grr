@@ -259,14 +259,6 @@ static bool RunTestCase(const granary::os::SnapshotGroup &snapshot_group) {
     }
   }
 
-  // If we found a crash, then reset how me measure code coverage because we
-  // don't want the crash coverage to prevent future publication of non-
-  // crashing inputs that cover some of the new but same paths that the
-  // crashing input covered.
-  if (is_crash) {
-    code::ResetPathCoverage();
-  }
-
   // We want to mutate code.
   if (mutating) {
     if (!gRecordToMutate) {
