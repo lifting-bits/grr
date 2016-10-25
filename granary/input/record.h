@@ -33,6 +33,8 @@ class IORecording {
   size_t num_outputs;
   size_t num_output_bytes;
 
+  size_t num_splits;
+
   std::vector<IOSystemCall> system_calls;
 
   typedef std::vector<IOSystemCall>::iterator iterator;
@@ -57,6 +59,7 @@ class IORecording {
   void AddInput(const std::string &val);
   void AddInput(std::string &&val);
   void AddOutput(std::string &&val);
+  void AddSplit(void);
 
   std::string ToInput(void) const;
   std::string ToOutput(void) const;

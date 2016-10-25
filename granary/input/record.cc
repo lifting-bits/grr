@@ -11,7 +11,8 @@ IORecording::IORecording(void)
     : num_inputs(0),
       num_input_bytes(0),
       num_outputs(0),
-      num_output_bytes(0) {}
+      num_output_bytes(0),
+      num_splits(0) {}
 
 
 void IORecording::AddInput(const std::string &data) {
@@ -42,6 +43,13 @@ void IORecording::AddOutput(std::string &&data) {
   syscall.kind = IOKind::kOutput;
   syscall.data = std::move(data);
   system_calls.push_back(std::move(syscall));
+}
+
+void IORecording::AddSplit(void) {
+  ++num_splits;
+  IOSystemCall syscall;
+  syscall.kind = IOKind::kOutput;
+  system_calls.push_back(syscall);
 }
 
 std::string IORecording::ToInput(void) const {

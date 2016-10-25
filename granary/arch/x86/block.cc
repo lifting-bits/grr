@@ -453,13 +453,13 @@ static void VirtualizeBranch(Block *block, const arch::Instruction *cfi) {
   cond->operands[0].width = 8;
 
   // Jump around the:
-  //    1)  Patchable `jmp`. Initially points at (2).
-  //    2)  `call` into the instrumentation point.
-  //    3)  `mov` of the block `eip` into the Process' last branch pc.
-  //    4)  `ret` back to the dispatcher.
+  //    1)  Patchable `jmp`. Initially points at (5 bytes).
+  //    2)  `call` into the instrumentation point (5 bytes).
+  //    3)  `mov` of the block `eip` into the Process' last branch pc (4 bytes).
+  //    4)  `ret` back to the dispatcher (1 byte).
   cond->operands[0].u.brdisp = 15;
 
-  LoadImm(block, GRANARY_ABI_PC32, cfi->EndPC());
+  LoadImm(block, GRANARY_ABI_PC32, cfi->EndPC());  // 6 bytes.
 }
 
 // Emulates a direct jump.

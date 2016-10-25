@@ -84,7 +84,10 @@ uint32_t DoTransmit(os::Process32 *process, int fd, const uint8_t *data,
     std::string syscall_data;
     syscall_data.reserve(count);
     syscall_data.insert(syscall_data.begin(), data, data + count);
-    input::gRecord->AddOutput(std::move(syscall_data));
+
+    // TODO(pag): Don't record output for now; we unconditionally add a "split"
+    //            into `input::gRecord` in the `Transmit` function.
+    //input::gRecord->AddOutput(std::move(syscall_data));
   }
   return count;
 }
@@ -179,10 +182,15 @@ static uint32_t CountChunkedReadableBytes(Process32 *process, uint8_t *buf,
 static SystemCallStatus Transmit(Process32 *process,
                                  FileTable &files,
                                  SystemCallABI abi) {
+
   if (!FLAGS_output_snapshot_dir.empty() &&
       !FLAGS_snapshot_before_input_byte) {
     Snapshot32::Create(process);
     return SystemCallStatus::kTerminated;
+  }
+
+  if (input::gRecord) {
+    input::gRecord->AddSplit();
   }
 
   const auto fd = abi.Arg<1>();
@@ -551,6 +559,10 @@ enum : uint32_t {
 
 // Implements the `allocate` DECREE system call.
 static SystemCallStatus Allocate(Process32 *process, SystemCallABI abi) {
+  if (input::gRecord) {
+    input::gRecord->AddSplit();
+  }
+
   auto length = abi.Arg<1,uint32_t>();
   auto is_executable = 0 != abi.Arg<2>();
   auto addr = abi.Arg<3,Addr32 *>();
@@ -594,6 +606,10 @@ static SystemCallStatus Allocate(Process32 *process, SystemCallABI abi) {
 
 // Implements the `allocate` DECREE system call.
 static SystemCallStatus Deallocate(Process32 *process, SystemCallABI abi) {
+  if (input::gRecord) {
+    input::gRecord->AddSplit();
+  }
+
   auto addr = abi.Arg<1,Addr32>();
   auto addr_uint = static_cast<uintptr_t>(addr);
   auto length = abi.Arg<2,uint32_t>();
@@ -633,6 +649,9 @@ static SystemCallStatus Deallocate(Process32 *process, SystemCallABI abi) {
 
 // Implements the `random` system call.
 static SystemCallStatus Random(Process32 *process, SystemCallABI abi) {
+  if (input::gRecord) {
+    input::gRecord->AddSplit();
+  }
 //  if (!FLAGS_output_snapshot_dir.empty() &&
 //      !FLAGS_snapshot_before_input_byte) {
 //    Snapshot32::Create(process);
