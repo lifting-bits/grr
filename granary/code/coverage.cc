@@ -96,7 +96,9 @@ extern void UpdateCoverageSet(void) {
     return;
   }
 
-  os::gProcess->SaveFPUState();
+  if (os::gProcess) {
+    os::gProcess->SaveFPUState();
+  }
 
   gNextPathEntry = 0;
   for (auto &entry : gPathEntries) {
@@ -122,7 +124,9 @@ extern void UpdateCoverageSet(void) {
     entry = {};
   }
 
-  os::gProcess->RestoreFPUState();
+  if (os::gProcess) {
+    os::gProcess->RestoreFPUState();
+  }
 }
 
 }  // extern C
