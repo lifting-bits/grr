@@ -79,7 +79,6 @@ update_coverage_map:
     // push [rsp]
     // and rsp, -16
 
-
     call    UpdateCoverageSet
 
     // pop rsp

@@ -1,6 +1,5 @@
 /* Copyright 2016 Peter Goodman (peter@trailofbits.com), all rights reserved. */
 
-
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -16,6 +15,8 @@
 
 #include "granary/code/instrument.h"
 #include "granary/code/coverage.h"
+
+#include "granary/os/process.h"
 
 #include "third_party/md5/md5.h"
 
@@ -94,6 +95,9 @@ extern void UpdateCoverageSet(void) {
   if (!gNextPathEntry) {
     return;
   }
+
+  os::gProcess->SaveFPUState();
+
   gNextPathEntry = 0;
   for (auto &entry : gPathEntries) {
     if (!entry.count) {
@@ -117,6 +121,8 @@ extern void UpdateCoverageSet(void) {
 
     entry = {};
   }
+
+  os::gProcess->RestoreFPUState();
 }
 
 }  // extern C
