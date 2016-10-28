@@ -1,6 +1,9 @@
 GRR
 ===
 
+[![Build Status](https://travis-ci.org/trailofbits/grr.svg?branch=master)](https://travis-ci.org/trailofbits/grr)
+[![Slack Chat](http://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com/)
+
 GRR is an x86 to amd64 binary translator. GRR was created to emulate and fuzzer DECREE challenge binaries.
 
 Key features:
@@ -28,16 +31,13 @@ make clean all GRANARY_TARGET=release
 There are two steps to running GRR: snapshotting, and record/replaying. Snapshotting creates an initial image of the binary after `execve`. Record/replaying takes an input testcase (formatted as a protocol buffer) and attempts to replay that testcase. The replay can be recorded or mutated as well.
 
 #### Snapshotting
-If you are on an AMD64 port of the CGC kernel, then you can do this:
+
+You can run `grrshot` on a CGC challenge binary, or on a statically linked 32-bit ELF version of a CGC challenge binary.
+
 ```sh
 ./bin/debug_linux_user/grrshot --num_exe=1 --exe_dir=/path --exe_prefix=CADET_000 --snapshit_dir=/tmp/snapshot
 ```
 This will create a snapshot of `/path/CADET_00001` and store the snapshot into the `/tmp/snapshot` directory.
-
-If you are on a non-CGC AMD64 port, then make sure to do the following first:
-```sh
-cgc2elf /path/CADET_00001
-```
 
 #### Replaying
 ```sh
@@ -74,11 +74,9 @@ GRR depends on the [Intel XED](https://software.intel.com/en-us/articles/xed-x86
 
 GRR depends on [Radamsa](https://github.com/aoh/radamsa), a high-quality input mutation engine. GRR embeds a version of Radamsa that can be used as a kind of library. Radamsa is licensed under the [MIT license](third_party/radamsa/LICENSE).
 
-#### Google Flags
-
-GRR depends on [gflags](https://github.com/gflags/gflags). A statically linked copy of gflags is bundled within this repository. It may or may not work for your system. Gflags is licensed under [BSD 3-clause license](third_party/gflags/COPYING.txt). 
-
 #### Other dependencies
+
+GRR depends on [gflags](https://github.com/gflags/gflags).
 
 GRR depends on Frank Thilo's C++ port of the the RSA Data Security, Inc. MD5 Message-Digest Algorithm.
 

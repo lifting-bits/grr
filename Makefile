@@ -77,15 +77,8 @@ else
 endif
 
 # Flags to pass to the various compilers.
-#
-# Note: We don't pass in Musl as a system include so that libc++ can pick up
-# on specific system-defined macros in libc that Musl doesn't provide.
-#
-# Note: We need to pass in libc++ as we're not guaranteed that the
-#		distribution version of libc++ exactly matches the Granary version, and
-#		even minor differences can result in missing symbols.
 GRANARY_CC_FLAGS := -std=c11 $(GRANARY_COMMON_FLAGS) $(GRANARY_ARCH_FLAGS)
-GRANARY_CXX_FLAGS := -std=c++11 #-stdlib=libstdc++
+GRANARY_CXX_FLAGS := -std=c++11
 GRANARY_CXX_FLAGS += $(GRANARY_COMMON_FLAGS) $(GRANARY_ARCH_FLAGS)
 GRANARY_CXX_FLAGS += -fno-exceptions -fno-asynchronous-unwind-tables -fno-rtti
 GRANARY_CXX_FLAGS += -isystem $(GRANARY_LIB_DIR)/gflags/include
@@ -143,10 +136,8 @@ $(GRANARY_BIN_DIR)/grrplay: $(PLAY_OBJECT_FILES)
 		-o $@ \
 		$^ \
 		$(GRANARY_LIB_DIR)/xed-intel64/lib/libxed.a \
-		$(GRANARY_LIB_DIR)/gflags/lib/libgflags_nothreads.a \
+		-lgflags \
 		-lpthread \
-		-static-libstdc++ \
-		-static-libgcc
 
 # Build the Granary executable.
 $(GRANARY_BIN_DIR)/grrshot: $(SNAPSHOT_OBJ_FILES)
@@ -155,10 +146,8 @@ $(GRANARY_BIN_DIR)/grrshot: $(SNAPSHOT_OBJ_FILES)
 		$(GRANARY_CXX_FLAGS) \
 		-o $@ \
 		$^ \
-		$(GRANARY_LIB_DIR)/gflags/lib/libgflags_nothreads.a \
 		-lpthread \
-		-static-libstdc++ \
-		-static-libgcc
+		-lgflags
 
 # Build the program to print out a code cache.
 $(GRANARY_BIN_DIR)/grrcov: $(DUMP_OBJECT_FILES)
@@ -167,10 +156,8 @@ $(GRANARY_BIN_DIR)/grrcov: $(DUMP_OBJECT_FILES)
 		$(GRANARY_CXX_FLAGS) \
 		-o $@ \
 		$^ \
-		$(GRANARY_LIB_DIR)/gflags/lib/libgflags_nothreads.a \
 		-lpthread \
-		-static-libstdc++ \
-		-static-libgcc
+		-lgflags
 
 clean:
 	@rm -rf $(GRANARY_BIN_DIR)
