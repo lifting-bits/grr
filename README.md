@@ -4,6 +4,8 @@ GRR
 [![Build Status](https://travis-ci.org/trailofbits/grr.svg?branch=master)](https://travis-ci.org/trailofbits/grr)
 [![Slack Chat](http://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com/)
 
+![GRR is pronounced with two fists in the air](grr-logo.png)
+
 GRR is an x86 to amd64 binary translator. GRR was created to emulate and fuzzer DECREE challenge binaries.
 
 Key features:
