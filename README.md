@@ -4,7 +4,7 @@ GRR
 [![Build Status](https://travis-ci.org/trailofbits/grr.svg?branch=master)](https://travis-ci.org/trailofbits/grr)
 [![Slack Chat](http://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com/)
 
-![GRR is pronounced with two fists in the air](grr-logo.png)
+![GRR is pronounced with two fists in the air](grr-logo2.png)
 
 GRR is an x86 to amd64 binary translator. GRR was created to emulate and fuzzer DECREE challenge binaries.
 
@@ -89,3 +89,5 @@ GRR uses Yann Collet's [xxHash](https://github.com/Cyan4973/xxHash) as part of i
 GRR, short for Granary Record/Replay, is the third iteration of the [Granary](https://github.com/Granary) series of dynamic binary translators. GRR is [pgoodman](https://github.com/pgoodman)'s third dynamic binary translator.
 
 GRR was created for the DARPA Cyber Grand Challenge. It was an essential component of Trail of Bit's CRS. The version of GRR in this repository differs from the CRS version in some important ways.
+
+![Don't tread on me!](grr-logo.png)
