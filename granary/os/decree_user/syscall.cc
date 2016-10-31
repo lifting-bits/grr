@@ -638,6 +638,11 @@ static SystemCallStatus Deallocate(Process32 *process, SystemCallABI abi) {
     abi.SetReturn(DECREE_EINVAL);
     GRANARY_STRACE( std::cerr << "EINVAL (addr > task size)" << std::endl; )
 
+  } else if (!((addr_uint + length) <= kMagicPageBegin ||
+                addr_uint >= kMagicPageEnd)) {
+    abi.SetReturn(DECREE_EINVAL);
+    GRANARY_STRACE( std::cerr << "EINVAL (magic)" << std::endl; )
+
   } else {
     process->Deallocate(addr, aligned_length);
     abi.SetReturn(0);

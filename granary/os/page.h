@@ -25,7 +25,9 @@ enum : uintptr_t {
   kStackBegin = kStackEnd - kStackSize,
   kMaxAddress = 0xB8000000U,
   kReserveNumRanges = 32UL,
-  kTaskSize = 0xFFFFe000U
+  kTaskSize = 0xFFFFe000U,
+  kMagicPageBegin = 0x4347c000U,
+  kMagicPageEnd = kMagicPageBegin + kPageSize
 };
 
 enum class PageState : uint8_t {

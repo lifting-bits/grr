@@ -121,7 +121,7 @@ static struct user_regs_struct GetGRegs(pid_t pid) {
   regs.rbp = 0;
   regs.rbx = 0;
   regs.rdx = 0;
-  regs.rcx = 0;
+  regs.rcx = kMagicPageBegin;
   regs.rax = 0;
   regs.orig_rax = 0;
   regs.rsp = 0xbaaaaffcU;
@@ -241,12 +241,14 @@ static int OpenSnapshotFile(int exe_num, bool create) {
 }
 
 static char * const gArgv[] = {nullptr};
-static const char * const gArgvEnvp[] = {"LD_BIND_NOW=1"};
 
 // Initialize the snapshot file.
 static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
   if (auto pid = fork()) {
-    if (-1 == pid) exit(EXIT_FAILURE);
+    if (-1 == pid) {
+      exit(EXIT_FAILURE);
+    }
+
     TraceBinary(pid);
 
     // Walk over the `exec`.
@@ -315,6 +317,18 @@ static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
     snapshot_offset += kStackSize;
     i += 1;
 
+    // Initialize the magic page.
+    GRANARY_ASSERT(detail::Snapshot32File::kMaxNumMappedRanges > i);
+    file->ranges[i].begin = kMagicPageBegin;
+    file->ranges[i].end = kMagicPageEnd;
+    file->ranges[i].lazy_begin = kMagicPageBegin;
+    file->ranges[i].fd_offs = snapshot_offset;
+    file->ranges[i].is_r = true;
+    file->ranges[i].is_w = false;
+    file->ranges[i].is_x = false;
+    snapshot_offset += kPageSize;
+    i += 1;
+
     // Persist the snapshot file meta-data.
     GRANARY_IF_ASSERT( errno = 0; )
     msync(file, sizeof *file, MS_SYNC | MS_INVALIDATE);
@@ -332,17 +346,14 @@ static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
 
     // Copy the memory into the snapshot file.
     for (const auto &range : ranges) {
-      if (!range.is_r) continue;
-      SnapshotRange(range, mem_fd, fd);
+      if (range.is_r) {
+        SnapshotRange(range, mem_fd, fd);
+      }
     }
 
-    // Add in the stack.
+    // Add in the stack and the magic page.
     ftruncate64(fd, static_cast<off64_t>(snapshot_offset));
     GRANARY_ASSERT(!errno && "Unable to scale snapshot file (2)");
-
-    // Add in the magic page.
-    lseek64(fd, 0, SEEK_END);
-    GRANARY_ASSERT(!errno && "Unable to seek to end of snapshot file (2)");
 
     // Clean up.
     close(mem_fd);
@@ -351,7 +362,7 @@ static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
 
   } else {
     EnableTracing();
-    execve(exe_name, gArgv, const_cast<char **>(gArgvEnvp));
+    execve(exe_name, gArgv, gArgv);
     GRANARY_ASSERT(false && "Unable to `exec` process.");
     __builtin_unreachable();
   }

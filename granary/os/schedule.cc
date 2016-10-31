@@ -172,6 +172,14 @@ static void CatchFault(int sig, siginfo_t *si, void *context_) {
   process->fault_index_addr = index;
   context->uc_mcontext.gregs[REG_RIP] = reinterpret_cast<greg_t>(
       granary_bad_block);
+
+  GRANARY_DEBUG(
+      std::cerr
+          << "Fault reading [" << std::hex << fault_addr32 << "] = ["
+          << std::hex << base
+          << " + (" << std::hex << index
+          << " * " << std::dec << scale
+          << ") + " << std::hex << disp << "]" << std::endl; )
 }
 
 // Catch a crash.
@@ -319,6 +327,7 @@ static void Schedule(Process32Group &processes, FileTable &files) {
       // executing the code.
       } else if (ProcessStatus::kError == process->status) {
         GRANARY_DEBUG( std::cerr << process->Id() << " crashed" << std::endl; )
+        return;
 
       // Unreachable case: this should never happen.
       } else {
