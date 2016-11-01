@@ -50,8 +50,8 @@ static void AssertExecutableExists(void) {
 
 extern "C" int main(int argc, char **argv, char **) {
   using namespace granary;
-  google::SetUsageMessage("grr_snapshot [options]");
-  google::ParseCommandLineFlags(&argc, &argv, false);
+  GFLAGS_NAMESPACE::SetUsageMessage("grr_snapshot [options]");
+  GFLAGS_NAMESPACE::ParseCommandLineFlags(&argc, &argv, false);
 
   FLAGS_output_snapshot_dir = FLAGS_snapshot_dir;
 

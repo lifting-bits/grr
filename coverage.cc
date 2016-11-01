@@ -14,8 +14,8 @@ DEFINE_string(persist_dir, "", "Directory path to where runtime state should "
 
 extern "C" int main(int argc, char **argv, char **) {
   using namespace granary;
-  google::SetUsageMessage(std::string(argv[0]) + " [options]");
-  google::ParseCommandLineFlags(&argc, &argv, false);
+  GFLAGS_NAMESPACE::SetUsageMessage(std::string(argv[0]) + " [options]");
+  GFLAGS_NAMESPACE::ParseCommandLineFlags(&argc, &argv, false);
 
   if (FLAGS_persist_dir.empty()) {
     std::cerr << "Must provide a unique path to a directory where the "
