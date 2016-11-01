@@ -301,8 +301,8 @@ static bool RunTestCase(const granary::os::SnapshotGroup &snapshot_group) {
 
 extern "C" int main(int argc, char **argv, char **) {
   using namespace granary;
-  GFLAGS_NAMESPACE::SetUsageMessage(std::string(argv[0]) + " [options]");
-  GFLAGS_NAMESPACE::ParseCommandLineFlags(&argc, &argv, false);
+  gflags::SetUsageMessage(std::string(argv[0]) + " [options]");
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   if (FLAGS_about) {
     std::cerr << __DATE__ ", " __TIME__ << std::endl;
