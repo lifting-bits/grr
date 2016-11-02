@@ -30,7 +30,7 @@ make clean all GRANARY_TARGET=release
 
 ### Running
 
-There are two steps to running GRR: snapshotting, and record/replaying. Snapshotting creates an initial image of the binary after `execve`. Record/replaying takes an input testcase (formatted as a protocol buffer) and attempts to replay that testcase. The replay can be recorded or mutated as well.
+There are two steps to running GRR: snapshotting, and record/replaying. Snapshotting creates an initial image of the binary after `execve`. Record/replaying takes an input testcase and attempts to replay that testcase. The replay can be recorded or mutated as well.
 
 #### Snapshotting
 
