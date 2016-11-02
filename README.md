@@ -41,7 +41,7 @@ There are two steps to running GRR: snapshotting, and record/replaying. Snapshot
 You can run `grrshot` on a CGC challenge binary, or on a statically linked 32-bit ELF version of a CGC challenge binary.
 
 ```sh
-./bin/debug_linux_user/grrshot --num_exe=1 --exe_dir=/path --exe_prefix=CADET_000 --snapshit_dir=/tmp/snapshot
+./bin/debug_linux_user/grrshot --num_exe=1 --exe_dir=/path --exe_prefix=CADET_000 --snapshot_dir=/tmp/snapshot
 ```
 This will create a snapshot of `/path/CADET_00001` and store the snapshot into the `/tmp/snapshot` directory.
 
