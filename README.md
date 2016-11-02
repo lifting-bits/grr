@@ -8,13 +8,17 @@ GRR
 
 GRR is an x86 to amd64 binary translator. GRR was created to emulate and fuzzer DECREE challenge binaries.
 
-Key features:
+#### Features
+
   * Code cache persistence (avoids translation overheads across separate runs).
   * Optimization of the code cache, including the persisted cache.
   * Multi-processing support (allows multiple communicating, 32-bit processes to be emulated within a single 64-bit address space).
   * Built-in fuzzing engine, which includes Radamsa.
   * Support for self-modifying code (e.g. JIT compilers). Self-modified code can also be persisted.
 
+#### Anti-features
+
+  * Orchestration. GRR does not manage a fuzzing campaign. An external orchestration system can direct GRR to fuzz a program, and identify a minimal set of maximal coverage-producing inputs.
 
 ### Compiling
 
