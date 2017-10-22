@@ -120,7 +120,20 @@ static uint32_t DoReceive(os::Process32 *process, int fd, uint8_t *data,
         NonMaskableInterrupt();
 
       } else {
+
+      if (index >= gInput.size()) {
+      if (!recorded_input.empty()) {
+        break;  // At the end of `gInput`.
+
+      // Walked too far off the end of the input.
+      } else if ((index - gInput.size()) >= kMaxTrailingEmptyReceives) {
+        GRANARY_DEBUG( std::cerr << "; DONE REPLAY" << std::endl; )
+        NonMaskableInterrupt();
+
+      } else {
         return 0;
+      }
+      }
       }
     }
 
