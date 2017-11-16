@@ -6,7 +6,7 @@ GRR
 
 ![GRR is pronounced with two fists in the air](grr-logo2.png)
 
-GRR is an x86 to amd64 binary translator. GRR was created to emulate and fuzzer DECREE challenge binaries.
+GRR is an x86 to amd64 binary translator. GRR was created to emulate and fuzz DECREE challenge binaries.
 
 #### Features
 
