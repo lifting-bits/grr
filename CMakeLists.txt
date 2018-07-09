@@ -95,13 +95,73 @@ list(APPEND GRANARY_CXX_FLAGS "-fno-exceptions -fno-asynchronous-unwind-tables -
 list(APPEND GRANARY_CXX_FLAGS "-isystem ${GRANARY_LIB_DIR}/gflags/include ")
 
 # # C, C++, and assembly files in Granary.
-# GRANARY_SRC_FILES := $(shell find ${GRANARY_SRC_DIR}/granary/ -name '*.cc' -or -name '*.c' -or -name '*.S' -type f)
-# GRANARY_SRC_FILES += $(shell find ${GRANARY_SRC_DIR}/third_party/ -name '*.cc' -or -name '*.c' -or -name '*.S' -type f)
-set(FIND_CMD "find" )
-set(FIND_ARG_TAIL "-name '*.cc' -or -name '*.c' -or -name '*.S' -type f")
-set(FIND_ARG1 "${GRANARY_SRC_DIR}/granary ${FIND_ARG_TAIL}" )
-set(AOEU "/root/grr/granary -name '*.cc' -or -name '*.c' -or -name '*.S' -type f")
-# set(FIND_ARG2 "${GRANARY_SRC_DIR}/third_party ${FIND_ARG_TAIL}" )
-execute_process(COMMAND ${FIND_CMD} ${FIND_ARG1} OUTPUT_VARIABLE GRANARY_SRC_FILES)
-# execute_process(COMMAND ${FIND_CMD} ${FIND_ARG2} OUTPUT_VARIABLE GRANARY_SRC_FILES_TMP)
-# list(APPEND GRANARY_SRC_FILES ${GRANARY_SRC_FILES_TMP})
+set(GRANARY_SRC_FILES
+	"./granary/input/record.cc"
+	"./granary/input/mutate.cc"
+	"./granary/base/breakpoint.cc"
+	"./granary/base/interrupt.cc"
+	"./granary/os/schedule.cc"
+	"./granary/os/process.cc"
+	"./granary/os/decree_user/syscall.cc"
+	"./granary/os/decree_user/snapshot.cc"
+	"./granary/os/snapshot.cc"
+	"./granary/os/file.cc"
+	"./granary/code/instruction.cc"
+	"./granary/code/instrument.cc"
+	"./granary/code/index.cc"
+	"./granary/code/block.cc"
+	"./granary/code/cache.cc"
+	"./granary/code/coverage.cc"
+	"./granary/code/execute.cc"
+	"./granary/code/trace.cc"
+	"./granary/code/branch_tracer.cc"
+	"./granary/arch/x86/instruction.cc"
+	"./granary/arch/x86/cpu.cc"
+	"./granary/arch/x86/instrument.cc"
+	"./granary/arch/x86/patch.cc"
+	"./granary/arch/x86/process.cc"
+	"./granary/arch/x86/branch_tracer.S"
+	"./granary/arch/x86/block.cc"
+	"./granary/arch/x86/fault.cc"
+	"./granary/arch/x86/base.cc"
+	"./granary/arch/x86/coverage.S"
+	"./granary/arch/x86/cache.S"
+	"./granary/arch/x86/syscall.S"
+	"./granary/arch/x86/trace.cc"
+	)
+
+list(APPEND GRANARY_SRC_FILES
+	"./third_party/radamsa/radamsa.c"
+	"./third_party/radamsa/radamsa.cc"
+	"./third_party/md5/md5.cc"
+	"./third_party/xxhash/xxhash.c"
+	)
+
+set(DUMP_SRC_FILES
+	"/coverage.cc"
+    "/granary/code/index.cc"
+    "/granary/base/breakpoint.cc"
+    "/granary/base/interrupt.cc"
+    "/xxhash/xxhash.c"
+	)
+
+set(PLAY_SRC_FILES
+	"${GRANARY_SRC_DIR}/play.cc"
+	"${GRANARY_SRC_FILES}"
+	)
+
+set(SNAPSHOT_SRC_FILES
+	"${GRANARY_SRC_DIR}/snapshot.cc"
+	"${GRANARY_SRC_DIR}/granary/os/snapshot.cc"
+	"${GRANARY_SRC_DIR}/granary/os/decree_user/snapshot.cc"
+	"${GRANARY_SRC_DIR}/granary/base/breakpoint.cc"
+	"${GRANARY_SRC_DIR}/granary/base/interrupt.cc"
+)
+
+# build the actual executables
+add_executable(grrplay ${PLAY_SRC_FILES})
+target_link_libraries(grrplay gflags pthread)
+# add_executable(grrshot ${SNAPSHOT_SRC_FILES})
+# add_executable(grrcov ${DUMP_SRC_FILES})
+
+# make install
