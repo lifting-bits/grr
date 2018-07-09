@@ -44,56 +44,56 @@ set(GRANARY_WITH_VALGRIND 0)
 
 # Compiler warnings that are explicitly disabled.
 # Alternatively, have these as a target_compile_options instead.
-set(GRANARY_DISABLED_WARNINGS "-Wno-gnu-anonymous-struct ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-gnu-conditional-omitted-operand ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-long-long ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-gnu-statement-expression ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-nested-anon-types ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-extended-offsetof ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-c++98-compat-pedantic -Wno-c++98-compat ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-padded ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-unused-macros ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-missing-variable-declarations ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-missing-prototypes ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-packed ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-global-constructors ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-exit-time-destructors ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-disabled-macro-expansion ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-date-time ")
-list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-reserved-id-macro ")
+set(GRANARY_DISABLED_WARNINGS "-Wno-gnu-anonymous-struct")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-gnu-conditional-omitted-operand")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-long-long")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-gnu-statement-expression")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-nested-anon-types")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-extended-offsetof")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-c++98-compat-pedantic -Wno-c++98-compat")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-padded")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-unused-macros")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-missing-variable-declarations")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-missing-prototypes")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-packed")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-global-constructors")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-exit-time-destructors")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-disabled-macro-expansion")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-date-time")
+set(GRANARY_DISABLED_WARNINGS "${GRANARY_DISABLED_WARNINGS} -Wno-reserved-id-macro")
 
 # Arch-specific flags.
 set(GRANARY_ARCH_FLAGS "-m64 -mtune=native -fPIC -ffreestanding ")
-list(APPEND GRANARY_ARCH_FLAGS "-ftls-model=initial-exec -mno-red-zone ")
+set(GRANARY_ARCH_FLAGS "${GRANARY_ARCH_FLAGS} -ftls-model=initial-exec -mno-red-zone")
 
 # Flags that are common to both C and C++ compilers.
-list(APPEND GRANARY_COMMON_FLAGS "-I${GRANARY_SRC_DIR} ")
-list(APPEND GRANARY_COMMON_FLAGS "-Wall -Werror -Wpedantic  ")
-list(APPEND GRANARY_COMMON_FLAGS "${GRANARY_DISABLED_WARNINGS} ")
-list(APPEND GRANARY_COMMON_FLAGS "-DGRANARY_WHERE_${GRANARY_WHERE} ")
-list(APPEND GRANARY_COMMON_FLAGS "-DGRANARY_OS_${GRANARY_OS} ")
-list(APPEND GRANARY_COMMON_FLAGS "-DGRANARY_TARGET_${GRANARY_TARGET} ")
-list(APPEND GRANARY_COMMON_FLAGS "-DGOOGLE_PROTOBUF_NO_RTTI ")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -I${GRANARY_SRC_DIR}")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -Wall -Werror -Wpedantic ")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} ${GRANARY_COMMON_FLAGS}")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_WHERE_${GRANARY_WHERE}")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_OS_${GRANARY_OS}")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_TARGET_${GRANARY_TARGET}")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGOOGLE_PROTOBUF_NO_RTTI")
 
 set(GRANARY_SANITIZER "")
 
 # Optimization and debug information level.
 # TODO: CMAKE_BUILD_TYPE instead
 if ("debug" EQUAL ${GRANARY_TARGET})
-	list(APPEND GRANARY_COMMON_FLAGS "-O0 -g3 -fno-inline ")
+	set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -O0 -g3 -fno-inline")
 	if (defined ${GRANARY_SANITIZER})
-		list(APPEND GRANARY_COMMON_FLAGS "-fsanitize=${GRANARY_SANITIZER} ")
+		set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -fsanitize=${GRANARY_SANITIZER}")
 	endif ()
 else ()
-	list(APPEND GRANARY_COMMON_FLAGS "-Oz -g3 ")
+	set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -Oz -g3")
 endif ()
 
 # Flags to pass to the various compilers.
-set(GRANARY_CC_FLAGS "-std=c11 ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS} ")
+set(GRANARY_CC_FLAGS "-std=c11 ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
 set(GRANARY_CXX_FLAGS "-std=c++11")
-list(APPEND GRANARY_CXX_FLAGS "${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS} ")
-list(APPEND GRANARY_CXX_FLAGS "-fno-exceptions -fno-asynchronous-unwind-tables -fno-rtti ")
-list(APPEND GRANARY_CXX_FLAGS "-isystem ${GRANARY_LIB_DIR}/gflags/include ")
+set(GRANARY_CXX_FLAGS "${GRANARY_CXX_FLAGS} ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
+set(GRANARY_CXX_FLAGS "${GRANARY_CXX_FLAGS} -fno-exceptions -fno-asynchronous-unwind-tables -fno-rtti")
+set(GRANARY_CXX_FLAGS "${GRANARY_CXX_FLAGS} -isystem ${GRANARY_LIB_DIR}/gflags/include")
 
 # # C, C++, and assembly files in Granary.
 set(GRANARY_SRC_FILES
@@ -161,8 +161,11 @@ set(SNAPSHOT_SRC_FILES
 
 # build the actual executables
 add_executable(grrplay ${PLAY_SRC_FILES})
+target_include_directories(grrplay PUBLIC "${GRANARY_SRC_DIR}")
 target_link_libraries(grrplay gflags pthread)
+set_target_properties(grrplay PROPERTIES COMPILE_FLAGS "${GRANARY_CXX_FLAGS} ${GRANARY_DISABLED_WARNINGS}")
+
 # add_executable(grrshot ${SNAPSHOT_SRC_FILES})
 # add_executable(grrcov ${DUMP_SRC_FILES})
 
-# make install
+# make install :: cmake's install()
