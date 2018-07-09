@@ -8,6 +8,9 @@ cmake_minimum_required (VERSION 3.2)
 	# the language given to the LANGUAGE field of the project command or the
 	# enable_language command is just a string, which will then be used by CMake
 	# together with the language dependent variables to setup the build system
+enable_language(C)
+enable_language(CXX)
+enable_language(ASM)
 
 # first: assuming all dependencies are installed, build grr.
 
@@ -60,10 +63,8 @@ list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-date-time ")
 list(APPEND GRANARY_DISABLED_WARNINGS "-Wno-reserved-id-macro ")
 
 # Arch-specific flags.
-set(GRANARY_ARCH_FLAGS "-m64 -mtune=generic -fPIC -ffreestanding ")
+set(GRANARY_ARCH_FLAGS "-m64 -mtune=native -fPIC -ffreestanding ")
 list(APPEND GRANARY_ARCH_FLAGS "-ftls-model=initial-exec -mno-red-zone ")
-list(APPEND GRANARY_ARCH_FLAGS "-fno-common -fno-builtin ")
-list(APPEND GRANARY_ARCH_FLAGS "-fno-stack-protector -minline-all-stringops ")
 
 # Flags that are common to both C and C++ compilers.
 list(APPEND GRANARY_COMMON_FLAGS "-I${GRANARY_SRC_DIR} ")
