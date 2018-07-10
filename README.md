@@ -24,12 +24,16 @@ GRR is an x86 to amd64 binary translator. GRR was created to emulate and fuzz DE
 
 #### Debug Build
 ```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=DEBUG ..
 make clean all
 ```
 
 #### Release Build
 ```sh
-make clean all GRANARY_TARGET=release
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+make clean all
 ```
 
 ### Running

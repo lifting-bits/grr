@@ -3,20 +3,14 @@
 project(grr)
 cmake_minimum_required (VERSION 3.2)
 
-# what is the purpose of enable_language()?
-# acc to https://stackoverflow.com/a/24536108
-	# the language given to the LANGUAGE field of the project command or the
-	# enable_language command is just a string, which will then be used by CMake
-	# together with the language dependent variables to setup the build system
 enable_language(C)
 enable_language(CXX)
 enable_language(ASM)
 
-# first: assuming all dependencies are installed, build grr.
-
 # What compilers are we using?
 set(CMAKE_C_COMPILER "clang-3.8")
 set(CMAKE_CXX_COMPILER "clang++-3.8")
+set(CMAKE_ASM_COMPILER "clang-3.8")
 
 # Where is Granary's source code located?
 set(GRANARY_SRC_DIR "${PROJECT_SOURCE_DIR}")
@@ -29,15 +23,12 @@ set(GRANARY_OS "decree")
 # Where will Granary run? `kernel` or `user` space.
 set(GRANARY_WHERE "user")
 
-# What type of build should be perform?
-# TODO: Use CMAKE_BUILD_TYPE
-set(GRANARY_TARGET "debug")
-
 # Useful for distinguishing different kinds of builds.
-set(GRANARY_TRIPLE "${GRANARY_TARGET}_${GRANARY_OS}_${GRANARY_WHERE}")
+set(GRANARY_TRIPLE "${CMAKE_BUILD_TYPE}_${GRANARY_OS}_${GRANARY_WHERE}")
 
 # Where should we emit object files and the executable?
 set(GRANARY_BIN_DIR "${GRANARY_SRC_DIR}/build/${GRANARY_TRIPLE}")
+# This is currently unused, since CMake should automatically handle this if you're using it with an IDE.
 
 # Should we assume that Granary will be executed with Valgrind?
 set(GRANARY_WITH_VALGRIND 0)
@@ -69,17 +60,16 @@ set(GRANARY_ARCH_FLAGS "${GRANARY_ARCH_FLAGS} -ftls-model=initial-exec -mno-red-
 # Flags that are common to both C and C++ compilers.
 set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -I${GRANARY_SRC_DIR}")
 set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -Wall -Werror -Wpedantic ")
-set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} ${GRANARY_COMMON_FLAGS}")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} ${GRANARY_DISABLED_WARNINGS}")
 set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_WHERE_${GRANARY_WHERE}")
 set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_OS_${GRANARY_OS}")
-set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_TARGET_${GRANARY_TARGET}")
+set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_TARGET_${CMAKE_BUILD_TYPE}")
 
 set(GRANARY_SANITIZER "")
 
 # Optimization and debug information level.
-# TODO: CMAKE_BUILD_TYPE instead
-if ("debug" EQUAL ${GRANARY_TARGET})
-	set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -O0 -g3 -fno-inline")
+if ("DEBUG" MATCHES ${CMAKE_BUILD_TYPE})
+  set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -O0 -g3 -fno-inline")
 	if (defined ${GRANARY_SANITIZER})
 		set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -fsanitize=${GRANARY_SANITIZER}")
 	endif ()
@@ -88,11 +78,13 @@ else ()
 endif ()
 
 # Flags to pass to the various compilers.
-set(GRANARY_CC_FLAGS "-std=c11 ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
-set(GRANARY_CXX_FLAGS "-std=c++11")
-set(GRANARY_CXX_FLAGS "${GRANARY_CXX_FLAGS} ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
-set(GRANARY_CXX_FLAGS "${GRANARY_CXX_FLAGS} -fno-exceptions -fno-asynchronous-unwind-tables -fno-rtti")
-set(GRANARY_CXX_FLAGS "${GRANARY_CXX_FLAGS} -isystem ${GRANARY_LIB_DIR}/gflags/include")
+set(CMAKE_C_FLAGS "-std=c11 ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-asynchronous-unwind-tables -fno-rtti")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${GRANARY_LIB_DIR}/gflags/include")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+set(CMAKE_ASM_FLAGS "${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
 
 # # C, C++, and assembly files in Granary.
 set(GRANARY_SRC_FILES
@@ -120,14 +112,14 @@ set(GRANARY_SRC_FILES
 	"./granary/arch/x86/instrument.cc"
 	"./granary/arch/x86/patch.cc"
 	"./granary/arch/x86/process.cc"
-	"./granary/arch/x86/branch_tracer.S"
 	"./granary/arch/x86/block.cc"
 	"./granary/arch/x86/fault.cc"
 	"./granary/arch/x86/base.cc"
+	"./granary/arch/x86/trace.cc"
+	"./granary/arch/x86/branch_tracer.S"
 	"./granary/arch/x86/coverage.S"
 	"./granary/arch/x86/cache.S"
 	"./granary/arch/x86/syscall.S"
-	"./granary/arch/x86/trace.cc"
 	)
 
 list(APPEND GRANARY_SRC_FILES
@@ -138,11 +130,11 @@ list(APPEND GRANARY_SRC_FILES
 	)
 
 set(DUMP_SRC_FILES
-	"/coverage.cc"
-    "/granary/code/index.cc"
-    "/granary/base/breakpoint.cc"
-    "/granary/base/interrupt.cc"
-    "/xxhash/xxhash.c"
+	"./coverage.cc"
+    "./granary/code/index.cc"
+    "./granary/base/breakpoint.cc"
+    "./granary/base/interrupt.cc"
+    "./third_party/xxhash/xxhash.c"
 	)
 
 set(PLAY_SRC_FILES
@@ -158,13 +150,21 @@ set(SNAPSHOT_SRC_FILES
 	"${GRANARY_SRC_DIR}/granary/base/interrupt.cc"
 )
 
-# build the actual executables
+# Build the actual executables
 add_executable(grrplay ${PLAY_SRC_FILES})
-target_include_directories(grrplay PUBLIC "${GRANARY_SRC_DIR}")
-target_link_libraries(grrplay gflags pthread)
-set_target_properties(grrplay PROPERTIES COMPILE_FLAGS "${GRANARY_CXX_FLAGS} ${GRANARY_DISABLED_WARNINGS}")
+target_include_directories(grrplay PUBLIC ${GRANARY_SRC_DIR})
+target_link_libraries(grrplay gflags pthread ${GRANARY_LIB_DIR}/xed-intel64/lib/libxed.a)
 
-# add_executable(grrshot ${SNAPSHOT_SRC_FILES})
-# add_executable(grrcov ${DUMP_SRC_FILES})
+add_executable(grrshot ${SNAPSHOT_SRC_FILES})
+target_link_libraries(grrshot gflags pthread)
+set_target_properties(grrshot PROPERTIES COMPILE_FLAGS ${CMAKE_CXX_FLAGS})
 
-# make install :: cmake's install()
+add_executable(grrcov ${DUMP_SRC_FILES})
+target_link_libraries(grrcov gflags pthread)
+
+install(TARGETS grrplay grrshot grrcov
+		DESTINATION "${GRANARY_PREFIX_DIR}/bin"
+		PERMISSIONS OWNER_READ OWNER_EXECUTE
+					GROUP_READ GROUP_EXECUTE
+					WORLD_READ WORLD_EXECUTE
+)
