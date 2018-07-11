@@ -7,10 +7,13 @@ enable_language(C)
 enable_language(CXX)
 enable_language(ASM)
 
-# What compilers are we using?
-set(CMAKE_C_COMPILER "clang-3.8")
-set(CMAKE_CXX_COMPILER "clang++-3.8")
-set(CMAKE_ASM_COMPILER "clang-3.8")
+if (NOT ${CMAKE_C_COMPILER} MATCHES ".*clang")
+	message(FATAL_ERROR "Please use clang as your C compiler (-DCMAKE_C_COMPILER=clang)")
+endif()
+
+if (NOT ${CMAKE_CXX_COMPILER} MATCHES ".*clang\\+\\+")
+	message(FATAL_ERROR "Please use clang++ as your C++ compiler  (-DCMAKE_CXX_COMPILER=clang++)")
+endif()
 
 # Where is Granary's source code located?
 set(GRANARY_SRC_DIR "${PROJECT_SOURCE_DIR}")
@@ -65,7 +68,7 @@ set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_OS_${GRANARY_OS}")
 set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -DGRANARY_TARGET_${CMAKE_BUILD_TYPE}")
 
 # Optimization and debug information level.
-if ("DEBUG" MATCHES ${CMAKE_BUILD_TYPE})
+if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG" )
   set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -O0 -g3 -fno-inline")
 	if (GRANARY_SANITIZER)
 		set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -fsanitize=${GRANARY_SANITIZER}")
@@ -154,7 +157,6 @@ target_link_libraries(grrplay gflags pthread ${GRANARY_LIB_DIR}/xed-intel64/lib/
 
 add_executable(grrshot ${SNAPSHOT_SRC_FILES})
 target_link_libraries(grrshot gflags pthread)
-set_target_properties(grrshot PROPERTIES COMPILE_FLAGS ${CMAKE_CXX_FLAGS})
 
 add_executable(grrcov ${DUMP_SRC_FILES})
 target_link_libraries(grrcov gflags pthread)
