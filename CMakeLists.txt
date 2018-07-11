@@ -7,12 +7,9 @@ enable_language(C)
 enable_language(CXX)
 enable_language(ASM)
 
-if (NOT ${CMAKE_C_COMPILER} MATCHES ".*clang")
-	message(FATAL_ERROR "Please use clang as your C compiler (-DCMAKE_C_COMPILER=clang)")
-endif()
-
-if (NOT ${CMAKE_CXX_COMPILER} MATCHES ".*clang\\+\\+")
-	message(FATAL_ERROR "Please use clang++ as your C++ compiler  (-DCMAKE_CXX_COMPILER=clang++)")
+if ((NOT ${CMAKE_C_COMPILER} MATCHES ".*clang")
+	OR (NOT ${CMAKE_CXX_COMPILER} MATCHES ".*clang\\+\\+"))
+	message(FATAL_ERROR "Please use clang as your C compiler\n-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++")
 endif()
 
 # Where is Granary's source code located?
