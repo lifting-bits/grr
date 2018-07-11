@@ -9,7 +9,7 @@ compiler:
 before_script:
 - sudo apt-get update
 - sudo apt-get install -y git build-essential
-- sudo apt-get install -y clang-3.8 clang++-3.8 llvm-3.8-dev libc++1 libc++-dev
+- sudo apt-get install -y clang llvm-dev libc++1 libc++-dev
 - sudo apt-get install -y libgflags-dev
 - mkdir build && cd build
 script:
