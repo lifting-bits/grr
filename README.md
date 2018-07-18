@@ -24,12 +24,16 @@ GRR is an x86 to amd64 binary translator. GRR was created to emulate and fuzz DE
 
 #### Debug Build
 ```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
 make clean all
 ```
 
 #### Release Build
 ```sh
-make clean all GRANARY_TARGET=release
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+make clean all
 ```
 
 ### Running
@@ -68,7 +72,7 @@ There are many mutators. Some of the mutators are deterministic, and therefore r
 #### System dependcies
 ```
 sudo apt-get install -y git build-essential
-sudo apt-get install -y clang-3.8 clang++-3.8 llvm-3.8-dev libc++1 libc++-dev
+sudo apt-get install -y clang llvm-dev libc++1 libc++-dev
 sudo apt-get install -y libgflags-dev
 ```
 
