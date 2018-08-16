@@ -65,7 +65,7 @@ void UpdateRelBranch(arch::Instruction *instr, CachePC encode_pc) {
   if (!instr->reencode_pc_rel_op) return;
   auto target = reinterpret_cast<CachePC>(instr->operands[1].u.imm0);
   auto next_pc = encode_pc + instr->encoded_length;
-  GRANARY_ASSERT(32 == instr->operands[0].width);
+  GRANARY_ASSERT(32 == instr->operands[0].width_bits);
   instr->operands[0] = xed_relbr(target - next_pc, 32);
   instr->is_valid = false;
 }
@@ -122,7 +122,7 @@ static void Relativize(const arch::Instruction *app_instr,
   // TODO(pag): We assume user space addresses that are positive.
 
   op.u.mem.disp.displacement = static_cast<uint32_t>(new_disp);
-  op.u.mem.disp.displacement_width = 32;
+  op.u.mem.disp.displacement_bits = 32;
 
   if (IsEffectiveAddress(app_instr)) {
     op.u.mem.base = XED_REG_INVALID;
@@ -140,7 +140,7 @@ static void VirtualizeStack(xed_reg_enum_t &reg) {
 
 // Rebase a memory operand to use the memory base register.
 static void Rebase(Block *block, xed_encoder_operand_t &op) {
-  GRANARY_ASSERT(32 >= op.u.mem.disp.displacement_width);
+  GRANARY_ASSERT(32 >= op.u.mem.disp.displacement_bits);
   auto ea = op;
   Instrument(block, code::InstrumentationPoint::kInstrumentMemoryAddress);
   VirtualizeStack(ea.u.mem.base);
@@ -150,7 +150,7 @@ static void Rebase(Block *block, xed_encoder_operand_t &op) {
   op.u.mem.index = GRANARY_ABI_ADDR64;
   op.u.mem.scale = 1;
   op.u.mem.disp.displacement = 0;
-  op.u.mem.disp.displacement_width = 0;
+  op.u.mem.disp.displacement_bits = 0;
 }
 
 // Loads the register `src` into the register `reg`.
@@ -209,7 +209,7 @@ static void VirtualizeLegacyMem(Block *block,
     op.u.mem.scale = 0;
     op.u.mem.seg = XED_REG_INVALID;
     op.u.mem.disp.displacement = 0;
-    op.u.mem.disp.displacement_width = 0;
+    op.u.mem.disp.displacement_bits = 0;
 
   // We have something like `MOV legacy_reg8, MEM`; convert into:
   //
@@ -263,7 +263,7 @@ static void Virtualize(Block *block, const arch::Instruction *app_instr,
 static void LoadValue(Block *block, const arch::Instruction *app_instr,
                       const xed_encoder_operand_t &op) {
   auto instr = block->cache_instructions.Add();
-  auto size = op.width;
+  auto size = op.width_bits;
   xed_inst2(instr, arch::kXEDState64, XED_ICLASS_MOV, size,
             xed_reg(ResizeReg(GRANARY_ABI_VAL64, size)), op);
   Virtualize(block, app_instr, instr->operands[1]);
@@ -284,7 +284,7 @@ static void ExtendValue(Block *block, xed_iclass_enum_t extender,
 // Loads a sign-extended value into the ABI value register.
 static void LoadSignedValue(Block *block, const arch::Instruction *app_instr,
                             const xed_encoder_operand_t &op) {
-  ExtendValue(block, XED_ICLASS_MOVSX, op.width,
+  ExtendValue(block, XED_ICLASS_MOVSX, op.width_bits,
               app_instr->effective_operand_width);
   LoadValue(block, app_instr, op);
 }
@@ -450,7 +450,7 @@ static void VirtualizeBranch(Block *block, const arch::Instruction *cfi) {
   cond->mode = arch::kXEDState64;
   cond->effective_operand_width = arch::kAddrWidthBits_amd64;
   cond->effective_address_width = arch::kAddrWidthBits_amd64;
-  cond->operands[0].width = 8;
+  cond->operands[0].width_bits = 8;
 
   // Jump around the:
   //    1)  Patchable `jmp`. Initially points at (5 bytes).

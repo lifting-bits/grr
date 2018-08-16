@@ -281,7 +281,6 @@ static void DecodePrefixes(const xed_decoded_inst_t *xedd, Instruction *instr) {
     instr->prefixes.s.rep = xed_operand_values_has_rep_prefix(xedd);
     instr->prefixes.s.repne = xed_operand_values_has_repne_prefix(xedd);
   }
-  instr->prefixes.s.lock = xed_operand_values_has_lock_prefix(xedd);
 
   // TODO(pag): XACQUIRE, XRELEASE, MPX.
 }

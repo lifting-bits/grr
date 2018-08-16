@@ -32,7 +32,7 @@ function GetUbuntuOSVersion
       return 0
     ;;
     *)
-      printf "[x] Ubuntu ${DISTRIB_CODENAME} is not supported. Only xenial (16.04) and trusty (14.04) are supported.\n" # TODO: check if trusty is actually supported
+      printf "[x] Ubuntu ${DISTRIB_CODENAME} is not supported. Only xenial (16.04) and trusty (14.04) are supported.\n"
       return 1
     ;;
   esac
