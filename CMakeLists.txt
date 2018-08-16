@@ -99,20 +99,25 @@ else ()
 	set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -Oz -g3")
 endif ()
 
-# Flags to pass to the various compilers.
-set(CMAKE_C_FLAGS "-std=c11 ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
-set(CMAKE_CXX_FLAGS "-std=c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-asynchronous-unwind-tables -fno-rtti")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${GRANARY_LIB_DIR}/gflags/include")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-set(CMAKE_ASM_FLAGS "${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
-
 # dependencies
 # xed
 find_package(XED REQUIRED)
 list(APPEND PROJECT_LIBRARIES ${XED_LIBRARIES})
 list(APPEND PROJECT_INCLUDEDIRECTORIES ${XED_INCLUDE_DIRS})
+
+# gflags
+find_package(gflags REQUIRED)
+list(APPEND PROJECT_LIBRARIES gflags)
+list(APPEND PROJECT_INCLUDEDIRECTORIES ${GFLAGS_INCLUDE_DIRS})
+
+# Flags to pass to the various compilers.
+set(CMAKE_C_FLAGS "-std=c11 ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-asynchronous-unwind-tables -fno-rtti")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${GFLAGS_INCLUDE_DIRS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+set(CMAKE_ASM_FLAGS "${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
 
 # # C, C++, and assembly files in Granary.
 set(GRANARY_SRC_FILES
