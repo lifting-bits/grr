@@ -69,7 +69,7 @@ There are many mutators. Some of the mutators are deterministic, and therefore r
 
 #### Intel XED
 
-GRR depends on the [Intel XED](https://software.intel.com/en-us/articles/xed-x86-encoder-decoder-software-library) instruction encoder/decoder. A copy of XED is bundled within this repository. XED is licensed under the [What if pre-release license](third_party/xed-intel64/LICENSE.txt).
+GRR depends on the [Intel XED](https://software.intel.com/en-us/articles/xed-x86-encoder-decoder-software-library) instruction encoder/decoder. XED is licensed under the [Apache License](https://github.com/intelxed/xed/blob/master/LICENSE).
 
 #### Radamsa
 
