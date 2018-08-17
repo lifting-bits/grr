@@ -83,10 +83,10 @@ static xed_encoder_operand_t DecodeMemory0(const xed_decoded_inst_t *xedd,
   op.u.mem.index = xed_decoded_inst_get_index_reg(xedd, 0);
   op.u.mem.disp.displacement = \
       xed_decoded_inst_get_memory_displacement(xedd, 0);
-  op.u.mem.disp.displacement_width = \
+  op.u.mem.disp.displacement_bits = \
       xed_decoded_inst_get_memory_displacement_width_bits(xedd, 0);
   op.u.mem.scale = xed_decoded_inst_get_scale(xedd, 0);
-  op.width = xed_decoded_inst_operand_length_bits(xedd, op_num) ?:
+  op.width_bits = xed_decoded_inst_operand_length_bits(xedd, op_num) ?:
              instr->effective_operand_width;
   auto base64 = xed_get_largest_enclosing_register(op.u.mem.base);
   auto index64 = xed_get_largest_enclosing_register(op.u.mem.base);
@@ -117,7 +117,7 @@ static xed_encoder_operand_t DecodeImm0(const xed_decoded_inst_t *xedd,
     op.type = XED_ENCODER_OPERAND_TYPE_IMM0;
     op.u.imm0 = xed_decoded_inst_get_unsigned_immediate(xedd);
   }
-  op.width = xed_decoded_inst_get_immediate_width_bits(xedd);
+  op.width_bits = xed_decoded_inst_get_immediate_width_bits(xedd);
   return op;
 }
 
@@ -126,7 +126,7 @@ static xed_encoder_operand_t DecodeImm1(const xed_decoded_inst_t *xedd) {
   xed_encoder_operand_t op;
   op.type = XED_ENCODER_OPERAND_TYPE_IMM1;
   op.u.imm1 = xed_decoded_inst_get_second_immediate(xedd);
-  op.width = xed_decoded_inst_get_immediate_width_bits(xedd);
+  op.width_bits = xed_decoded_inst_get_immediate_width_bits(xedd);
   return op;
 }
 
@@ -152,9 +152,9 @@ static xed_encoder_operand_t DecodeReg(const xed_decoded_inst_t *xedd,
     instr->uses_legacy_registers = true;
   }
   if (XED_ADDRESS_WIDTH_64b == instr->mode.stack_addr_width) {
-    op.width = xed_get_register_width_bits64(op.u.reg);
+    op.width_bits = xed_get_register_width_bits64(op.u.reg);
   } else {
-    op.width = xed_get_register_width_bits(op.u.reg);
+    op.width_bits = xed_get_register_width_bits(op.u.reg);
   }
   UpdateGPRSets(instr, op.u.reg, xed_operand_rw(xedo));
   return op;
@@ -165,7 +165,7 @@ static xed_encoder_operand_t DecodeRelbr(const xed_decoded_inst_t *xedd) {
   xed_encoder_operand_t op;
   op.type = XED_ENCODER_OPERAND_TYPE_BRDISP;
   op.u.brdisp = xed_decoded_inst_get_branch_displacement(xedd);
-  op.width = xed_decoded_inst_get_branch_displacement_width_bits(xedd);
+  op.width_bits = xed_decoded_inst_get_branch_displacement_width_bits(xedd);
   return op;
 }
 
@@ -281,7 +281,6 @@ static void DecodePrefixes(const xed_decoded_inst_t *xedd, Instruction *instr) {
     instr->prefixes.s.rep = xed_operand_values_has_rep_prefix(xedd);
     instr->prefixes.s.repne = xed_operand_values_has_repne_prefix(xedd);
   }
-  instr->prefixes.s.lock = xed_operand_values_has_lock_prefix(xedd);
 
   // TODO(pag): XACQUIRE, XRELEASE, MPX.
 }
@@ -301,7 +300,7 @@ static bool DoDecode(xed_decoded_inst_t *xedd, const xed_state_t *dstate,
     case XED_CATEGORY_AVX2:
     case XED_CATEGORY_AVX2GATHER:
     case XED_CATEGORY_AVX512:
-    case XED_CATEGORY_AVX512VBMI:
+    case XED_CATEGORY_AVX512_VBMI:
     case XED_CATEGORY_RDRAND:
     case XED_CATEGORY_RDSEED:
       return false;

@@ -13,6 +13,30 @@ else() # using anything else, including AppleClang
 	message(FATAL_ERROR "Please use clang as your C compiler\n-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++")
 endif()
 
+if (DEFINED ENV{TRAILOFBITS_LIBRARIES})
+    set(LIBRARY_REPOSITORY_ROOT $ENV{TRAILOFBITS_LIBRARIES}
+        CACHE PATH "Location of cxx-common libraries.")
+endif ()
+
+if (DEFINED LIBRARY_REPOSITORY_ROOT)
+    set(TOB_CMAKE_INCLUDE "${LIBRARY_REPOSITORY_ROOT}/cmake_modules/repository.cmake")
+    set(LEGACY_TOB_CMAKE_INCLUDE "${LIBRARY_REPOSITORY_ROOT}/cmake/repository.cmake")
+
+    if (EXISTS "${LEGACY_TOB_CMAKE_INCLUDE}")
+        include("${LEGACY_TOB_CMAKE_INCLUDE}")
+        message(WARNING "Using legacy cxx-common build; please update!")
+    elseif (EXISTS "${TOB_CMAKE_INCLUDE}")
+        include("${TOB_CMAKE_INCLUDE}")
+
+    else ()
+        message(FATAL_ERROR "The library repository could not be found!")
+    endif ()
+
+    message(STATUS "Using the following library repository: ${LIBRARY_REPOSITORY_ROOT}")
+else ()
+    message(STATUS "Using system libraries")
+endif ()
+
 # Where is Granary's source code located?
 set(GRANARY_SRC_DIR "${PROJECT_SOURCE_DIR}")
 set(GRANARY_LIB_DIR  "${GRANARY_SRC_DIR}/third_party")
@@ -75,12 +99,23 @@ else ()
 	set(GRANARY_COMMON_FLAGS "${GRANARY_COMMON_FLAGS} -Oz -g3")
 endif ()
 
+# dependencies
+# xed
+find_package(XED REQUIRED)
+list(APPEND PROJECT_LIBRARIES ${XED_LIBRARIES})
+list(APPEND PROJECT_INCLUDEDIRECTORIES ${XED_INCLUDE_DIRS})
+
+# gflags
+find_package(gflags REQUIRED)
+list(APPEND PROJECT_LIBRARIES gflags)
+list(APPEND PROJECT_INCLUDEDIRECTORIES ${GFLAGS_INCLUDE_DIRS})
+
 # Flags to pass to the various compilers.
 set(CMAKE_C_FLAGS "-std=c11 ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
 set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-asynchronous-unwind-tables -fno-rtti")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${GRANARY_LIB_DIR}/gflags/include")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${GFLAGS_INCLUDE_DIRS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
 set(CMAKE_ASM_FLAGS "${GRANARY_COMMON_FLAGS} ${GRANARY_ARCH_FLAGS}")
 
@@ -150,8 +185,8 @@ set(SNAPSHOT_SRC_FILES
 
 # Build the actual executables
 add_executable(grrplay ${PLAY_SRC_FILES})
-target_include_directories(grrplay PUBLIC ${GRANARY_SRC_DIR})
-target_link_libraries(grrplay gflags pthread ${GRANARY_LIB_DIR}/xed-intel64/lib/libxed.a)
+target_include_directories(grrplay PUBLIC ${GRANARY_SRC_DIR} ${PROJECT_INCLUDEDIRECTORIES})
+target_link_libraries(grrplay gflags pthread ${PROJECT_LIBRARIES})
 
 add_executable(grrshot ${SNAPSHOT_SRC_FILES})
 target_link_libraries(grrshot gflags pthread)

@@ -10,8 +10,5 @@ before_script:
 - sudo apt-get update
 - sudo apt-get install -y git build-essential
 - sudo apt-get install -y clang llvm-dev libc++1 libc++-dev
-- sudo apt-get install -y libgflags-dev
-- mkdir build && cd build
 script:
-- cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. && make clean all
-- cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. && make clean all
+- ./scripts/build.sh
