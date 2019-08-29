@@ -11,7 +11,7 @@ SRC_DIR=$( cd "$( dirname "${SCRIPTS_DIR}" )" && pwd )
 CURR_DIR=$( pwd )
 BUILD_DIR=${CURR_DIR}/grr-build
 INSTALL_DIR=/usr/local
-LLVM_VERSION=llvm40
+LLVM_VERSION=llvm70
 OS_VERSION=
 ARCH_VERSION=
 
