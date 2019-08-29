@@ -14,10 +14,6 @@
 
 #include <gflags/gflags.h>
 
-#ifndef MAP_32BIT
-# define MAP_32BIT 0
-#endif
-
 #ifndef O_LARGEFILE
 # define O_LARGEFILE 0
 #endif
@@ -135,7 +131,7 @@ void AddPatchPoint(CachePC rel32, AppPC32 target) {
 }
 
 void InitPatcher(void) {
-  auto flags = MAP_FIXED | MAP_32BIT;
+  auto flags = MAP_FIXED;
   if (FLAGS_persist) {
 
     static char gPath[256] = {'\0'};

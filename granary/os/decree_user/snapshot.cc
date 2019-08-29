@@ -383,7 +383,7 @@ static std::string CopyExecutableFile(const char *exe_path, int exe_num) {
   auto new_fd = open(path, O_CREAT | O_CLOEXEC | O_RDWR | O_TRUNC, 0777);
   GRANARY_ASSERT(!errno && "Could not create copy of the executable.");
 
-  struct stat64 stat;
+  struct stat stat;
   fstat(fd, &stat);
   GRANARY_ASSERT(!errno && "Could not `fstat` the original executable.");
 

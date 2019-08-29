@@ -22,7 +22,8 @@ static unsigned gNextPCId = 0;
 void AddInstrumentationFunction(InstrumentationPoint ipoint,
                                 void (*func)(void)) {
   // This works as long as:
-  //    1)  The code cache is allocated as `MAP_32BIT`.
+  //    1)  The code cache is allocated within +/- 31 bits of displacement
+  //        of the binary.
   //    2)  The build of `grr` doesn't change across two
   //        uses of a persisted code cache. This part is *REALLY* important.
   gInstFuncs[ipoint] = reinterpret_cast<uintptr_t>(func);

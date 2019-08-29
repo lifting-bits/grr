@@ -25,13 +25,6 @@
 # define O_LARGEFILE 0
 #endif
 
-#ifndef MAP_32BIT
-# define HAS_MAP32BIT 0
-# define MAP_32BIT 0
-#else
-# define HAS_MAP32BIT 1
-#endif
-
 DECLARE_bool(persist);
 DECLARE_string(persist_dir);
 
@@ -82,7 +75,7 @@ static char gCachePath[256] = {'\0'};
 static int gFd = -1;
 
 // Flags for `mmap`.
-static int gMMapFlags = MAP_FIXED | MAP_POPULATE | MAP_SHARED | MAP_32BIT;
+static int gMMapFlags = MAP_FIXED | MAP_POPULATE | MAP_SHARED;
 
 // Size (in bytes) of the code cache.
 static size_t gCacheSize = 0;
@@ -124,7 +117,7 @@ static void ResizeCache(void) {
 static void InitInstrumentation(void) {
   GRANARY_IF_ASSERT( errno = 0; )
   mmap(gBegin, os::kPageSize, PROT_READ | PROT_WRITE,
-         MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS | MAP_32BIT, -1, 0);
+       MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   GRANARY_ASSERT(!errno && "Unable to map instrumentation page.");
 
   arch::InitInstrumentationFunctions(reinterpret_cast<CachePC>(gBegin));
@@ -164,19 +157,15 @@ void Init(void) {
     gFd = open(gCachePath, O_RDWR | O_CLOEXEC | O_CREAT | O_LARGEFILE, 0666);
     GRANARY_ASSERT(!errno && "Unable to open persisted code cache file.");
   } else {
-    gMMapFlags = MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS | MAP_32BIT;
+    gMMapFlags = MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS;
   }
 
   GRANARY_IF_ASSERT( errno = 0; )
-#if HAS_MAP32BIT
-  gBegin = mmap(nullptr, k250MiB, PROT_NONE,
-      MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_32BIT,
-      -1, 0);
-#else
-  gBegin = mmap(reinterpret_cast<void *>(0x70000000), k250MiB, PROT_NONE,
+
+  const auto begin_loc = reinterpret_cast<uintptr_t>(&Init) + k250MiB;
+  gBegin = mmap(reinterpret_cast<void *>(begin_loc), k250MiB, PROT_NONE,
                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED,
                 -1, 0);
-#endif
   GRANARY_ASSERT(!errno && "Unable to map address space for code cache.");
 
   // The first page of the code cache is for instrumentation.
