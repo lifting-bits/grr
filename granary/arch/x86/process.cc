@@ -138,7 +138,11 @@ bool Process32::DoTryRead(const uint8_t *ptr, uint8_t *val) const {
 bool Process32::RecoverFromTryReadWrite(ucontext_t *context) const {
   if (!fault_can_recover) return false;
   fault_can_recover = false;
+#ifdef __APPLE__
+  auto &pc = context->uc_mcontext->__ss.__rip;
+#else
   auto &pc = context->uc_mcontext.gregs[REG_RIP];
+#endif
   GRANARY_ASSERT(pc == (pc & ~15LL) && "Crash wasn't in a TryRead/TryWrite.");
   pc += 16LL;
   return true;
@@ -164,6 +168,18 @@ void Process32::InitRegs(const Snapshot32 *snapshot) {
 }
 
 void Process32::SynchronizeRegState(ucontext_t *context) {
+#ifdef __APPLE__
+  regs.edi = static_cast<uint32_t>(context->uc_mcontext->__ss.__rdi);
+  regs.esi = static_cast<uint32_t>(context->uc_mcontext->__ss.__rsi);
+  regs.ebp = static_cast<uint32_t>(context->uc_mcontext->__ss.__rbp);
+  regs.ebx = static_cast<uint32_t>(context->uc_mcontext->__ss.__rbx);
+  regs.edx = static_cast<uint32_t>(context->uc_mcontext->__ss.__rdx);
+  regs.ecx = static_cast<uint32_t>(context->uc_mcontext->__ss.__rcx);
+  regs.eax = static_cast<uint32_t>(context->uc_mcontext->__ss.__rax);
+  regs.esp = static_cast<uint32_t>(context->uc_mcontext->__ss.__rsp);
+  regs.eip = static_cast<uint32_t>(context->uc_mcontext->__ss.__rip);
+  regs.eflags = static_cast<uint32_t>(context->uc_mcontext->__ss.__rflags);
+#else
   regs.edi = static_cast<uint32_t>(context->uc_mcontext.gregs[REG_RDI]);
   regs.esi = static_cast<uint32_t>(context->uc_mcontext.gregs[REG_RSI]);
   regs.ebp = static_cast<uint32_t>(context->uc_mcontext.gregs[REG_RBP]);
@@ -174,6 +190,7 @@ void Process32::SynchronizeRegState(ucontext_t *context) {
   regs.esp = static_cast<uint32_t>(context->uc_mcontext.gregs[REG_R9]);
   regs.eip = static_cast<uint32_t>(context->uc_mcontext.gregs[REG_R10]);
   regs.eflags = static_cast<uint32_t>(context->uc_mcontext.gregs[REG_EFL]);
+#endif
 }
 
 void Process32::RestoreFPUState(void) const {

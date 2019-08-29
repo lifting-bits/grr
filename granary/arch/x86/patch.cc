@@ -14,6 +14,14 @@
 
 #include <gflags/gflags.h>
 
+#ifndef MAP_32BIT
+# define MAP_32BIT 0
+#endif
+
+#ifndef O_LARGEFILE
+# define O_LARGEFILE 0
+#endif
+
 DECLARE_bool(persist);
 DECLARE_string(persist_dir);
 

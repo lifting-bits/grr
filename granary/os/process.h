@@ -4,14 +4,17 @@
 #define GRANARY_OS_PROCESS_H_
 
 #include "granary/os/page.h"
+#include "granary/os/user.h"
 
 #include <vector>
 
 #include <setjmp.h>
+
+#define _XOPEN_SOURCE
 #include <ucontext.h>
 
 #include <sys/types.h>
-#include <sys/user.h>
+
 
 namespace granary {
 namespace os {

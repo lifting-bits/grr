@@ -6,6 +6,7 @@
 #include <sys/unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 
 namespace granary {
 namespace os {
@@ -39,8 +40,8 @@ void MappedRange32::CopyFromFileIntoMem(int snapshot_fd, void *mem,
   }
 
   GRANARY_IF_ASSERT( errno = 0; )
-  mmap64(mem, Size(), prot, MAP_PRIVATE | MAP_FIXED | MAP_NORESERVE,
-         snapshot_fd, fd_offs);
+  mmap(mem, Size(), prot, MAP_PRIVATE | MAP_FIXED | MAP_NORESERVE,
+       snapshot_fd, fd_offs);
   GRANARY_ASSERT(!errno && "Failed to copy snapshotted memory into process.");
 
   // Deal with lazily allocated pages.

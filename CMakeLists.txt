@@ -127,8 +127,8 @@ set(GRANARY_SRC_FILES
 	"./granary/base/interrupt.cc"
 	"./granary/os/schedule.cc"
 	"./granary/os/process.cc"
-	"./granary/os/decree_user/syscall.cc"
 	"./granary/os/decree_user/snapshot.cc"
+	"./granary/os/decree_user/syscall.cc"
 	"./granary/os/snapshot.cc"
 	"./granary/os/file.cc"
 	"./granary/code/instruction.cc"
@@ -168,12 +168,12 @@ set(DUMP_SRC_FILES
     "./granary/base/breakpoint.cc"
     "./granary/base/interrupt.cc"
     "./third_party/xxhash/xxhash.c"
-	)
+        granary/os/user.h)
 
 set(PLAY_SRC_FILES
 	"${GRANARY_SRC_DIR}/play.cc"
 	"${GRANARY_SRC_FILES}"
-	)
+        granary/os/user.h)
 
 set(SNAPSHOT_SRC_FILES
 	"${GRANARY_SRC_DIR}/snapshot.cc"
@@ -181,7 +181,7 @@ set(SNAPSHOT_SRC_FILES
 	"${GRANARY_SRC_DIR}/granary/os/decree_user/snapshot.cc"
 	"${GRANARY_SRC_DIR}/granary/base/breakpoint.cc"
 	"${GRANARY_SRC_DIR}/granary/base/interrupt.cc"
-)
+        granary/os/user.h)
 
 # Build the actual executables
 add_executable(grrplay ${PLAY_SRC_FILES})
@@ -198,5 +198,4 @@ install(TARGETS grrplay grrshot grrcov
 		DESTINATION "${GRANARY_PREFIX_DIR}/bin"
 		PERMISSIONS OWNER_READ OWNER_EXECUTE
 					GROUP_READ GROUP_EXECUTE
-					WORLD_READ WORLD_EXECUTE
-)
+					WORLD_READ WORLD_EXECUTE)

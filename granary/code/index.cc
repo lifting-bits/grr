@@ -18,6 +18,18 @@
 
 #include "../../third_party/xxhash/xxhash.h"
 
+#ifndef O_LARGEFILE
+# define O_LARGEFILE 0
+#endif
+
+#ifndef MAP_POPULATE
+# define MAP_POPULATE 0
+#endif
+
+#ifdef __APPLE__
+typedef off_t off64_t;
+#endif
+
 DECLARE_bool(persist);
 DECLARE_string(persist_dir);
 
@@ -63,8 +75,8 @@ static void ReviveCache(void) {
   auto fd = open(gIndexPath, O_CREAT | O_RDWR | O_CLOEXEC | O_LARGEFILE, 0666);
   GRANARY_ASSERT(!errno && "Unable to open persisted code cache index file.");
 
-  struct stat64 info;
-  fstat64(fd, &info);
+  struct stat info;
+  fstat(fd, &info);
   GRANARY_ASSERT(!errno && "Could stat code cache index file.");
 
   // Existing file is empty; nothing to revive.
@@ -82,11 +94,11 @@ static void ReviveCache(void) {
 
   auto scaled_size = (size + os::kPageSize - 1) & os::kPageMask;
   if (scaled_size > size) {
-    ftruncate64(fd, static_cast<off64_t>(scaled_size));
+    ftruncate(fd, static_cast<off64_t>(scaled_size));
     GRANARY_ASSERT(!errno && "Could not scale code cache index file.");
   }
-  auto ret = mmap64(nullptr, scaled_size, PROT_READ,
-                    MAP_PRIVATE | MAP_POPULATE, fd, 0);
+  auto ret = mmap(nullptr, scaled_size, PROT_READ,
+                  MAP_PRIVATE | MAP_POPULATE, fd, 0);
   GRANARY_ASSERT(!errno && "Could not map code cache index file.");
 
   gTable.reserve(num_entries);
@@ -117,18 +129,18 @@ void Exit(void) {
   GRANARY_ASSERT(!errno && "Unable to open persisted code cache index file.");
 
   if (gOldIndexExists) {
-    ftruncate64(fd, 0);
+    ftruncate(fd, 0);
     GRANARY_ASSERT(!errno && "Could not clear stale code cache index file.");
   }
 
   auto size = sizeof(Entry) * gTable.size();
   auto scaled_size = (size + os::kPageSize - 1) & os::kPageMask;
 
-  ftruncate64(fd, static_cast<off64_t>(scaled_size));
+  ftruncate(fd, static_cast<off64_t>(scaled_size));
   GRANARY_ASSERT(!errno && "Could not scale new code cache index file.");
 
-  auto ret = mmap64(nullptr, scaled_size, PROT_READ | PROT_WRITE,
-                    MAP_SHARED, fd, 0);
+  auto ret = mmap(nullptr, scaled_size, PROT_READ | PROT_WRITE,
+                  MAP_SHARED, fd, 0);
   GRANARY_ASSERT(!errno && "Could not map new code cache index file.");
 
   // Serialize.
@@ -143,7 +155,7 @@ void Exit(void) {
 
   // Truncate.
   if (size < scaled_size) {
-    ftruncate64(fd, static_cast<off64_t>(size));
+    ftruncate(fd, static_cast<off64_t>(size));
     GRANARY_ASSERT(!errno && "Could resize new code cache index file.");
   }
 }

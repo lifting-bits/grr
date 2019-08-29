@@ -1,35 +1,39 @@
+/* Copyright 2015 Peter Goodman, all rights reserved. */
+
+#ifdef __APPLE__
+# define SYMBOL(x) _ ## x
+#else
+# define SYMBOL(x) x
+#endif
 
     .file "granary/arch/x86/cache.S"
     .intel_syntax noprefix
 
     .data
-granary_stack_pointer:
+SYMBOL(granary_stack_pointer):
     .quad 0
 
-    .extern gInlineCache
+    .extern SYMBOL(gInlineCache)
 
 
     // Used to return from the code cache with a bad block.
     .align 16
-    .globl granary_bad_block
-    .type granary_bad_block, @function
-granary_bad_block:
+    .globl SYMBOL(granary_bad_block)
+SYMBOL(granary_bad_block):
     .cfi_startproc
     xor r14, r14
     not r14
-    mov r11, [RIP + granary_stack_pointer]
+    mov r11, [RIP + SYMBOL(granary_stack_pointer)]
     sub r11, 8
     mov rsp, r11
     ret
     .cfi_endproc
-    .size   _ZN7granary5cache4CallEPNS_2os9Process32EPh, .-_ZN7granary5cache4CallEPNS_2os9Process32EPh
     ud2
 
     // CachePC cache::Call(os::Process32 *process, CachePC block);
     .align 16
-    .globl _ZN7granary5cache4CallEPNS_2os9Process32EPh;
-    .type _ZN7granary5cache4CallEPNS_2os9Process32EPh, @function
-_ZN7granary5cache4CallEPNS_2os9Process32EPh:
+    .globl SYMBOL(_ZN7granary5cache4CallEPNS_2os9Process32EPh);
+SYMBOL(_ZN7granary5cache4CallEPNS_2os9Process32EPh):
     .cfi_startproc
 
     /* Save the Linux ABI callee-saved regs */
@@ -65,7 +69,7 @@ _ZN7granary5cache4CallEPNS_2os9Process32EPh:
                                    /* Don't restore the emulated pc */
 
     // So that we can jump back into the top-level cache call.
-    mov [RIP + granary_stack_pointer], rsp
+    mov [RIP + SYMBOL(granary_stack_pointer)], rsp
 
     /* Call into the block */
 .Lenter_cache:
@@ -91,7 +95,12 @@ _ZN7granary5cache4CallEPNS_2os9Process32EPh:
     mov r11d, dword ptr [r15 + 52]
     and r11, 0x7ff
     shl r11, 3  /* Scale by 8 bytes, the size of each entry. */
-    lea r11, [r11 + gInlineCache]
+
+    /* Get first probe point into the inline cache. */
+    push r12
+    lea r12, [RIP + SYMBOL(gInlineCache)]
+    lea r11, [r11 + r12]
+    pop r12
 
 #define CHECK_CACHE(entry) \
     cmp dword ptr [r11 + (entry * 8)], r10d ; \
@@ -145,5 +154,4 @@ _ZN7granary5cache4CallEPNS_2os9Process32EPh:
 
     ret
     .cfi_endproc
-    .size   _ZN7granary5cache4CallEPNS_2os9Process32EPh, .-_ZN7granary5cache4CallEPNS_2os9Process32EPh
     ud2

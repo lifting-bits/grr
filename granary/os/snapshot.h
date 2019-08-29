@@ -4,6 +4,7 @@
 #define GRANARY_OS_SNAPSHOT_H_
 
 #include "granary/os/page.h"
+#include "granary/os/user.h"
 
 #include <vector>
 #include <string>

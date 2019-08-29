@@ -17,6 +17,21 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef MAP_POPULATE
+# define MAP_POPULATE 0
+#endif
+
+#ifndef O_LARGEFILE
+# define O_LARGEFILE 0
+#endif
+
+#ifndef MAP_32BIT
+# define HAS_MAP32BIT 0
+# define MAP_32BIT 0
+#else
+# define HAS_MAP32BIT 1
+#endif
+
 DECLARE_bool(persist);
 DECLARE_string(persist_dir);
 
@@ -81,25 +96,25 @@ static bool kCacheIsEmpty = true;
 // Returns the size of the existing cache.
 static size_t ExistingCacheSize(void) {
   if (!FLAGS_persist) return 0;
-  struct stat64 info;
-  fstat64(gFd, &info);
+  struct stat info;
+  fstat(gFd, &info);
   return static_cast<size_t>(info.st_size);
 }
 
 // Adds a new page to the end of the code cache.
 static void ResizeCache(void) {
-  off64_t offset = 0;
+  off_t offset = 0;
   if (FLAGS_persist) {
     GRANARY_IF_ASSERT( errno = 0; )
-    ftruncate64(gFd, static_cast<off64_t>(gCacheSize + os::kPageSize));
+    ftruncate(gFd, static_cast<off_t>(gCacheSize + os::kPageSize));
     GRANARY_ASSERT(!errno && "Unable to resize code cache.");
 
-    offset = static_cast<off64_t>(gCacheSize);
+    offset = static_cast<off_t>(gCacheSize);
   }
 
   GRANARY_IF_ASSERT( errno = 0; )
-  mmap64(gEnd, os::kPageSize, PROT_READ | PROT_WRITE | PROT_EXEC, gMMapFlags,
-         gFd, offset);
+  mmap(gEnd, os::kPageSize, PROT_READ | PROT_WRITE | PROT_EXEC, gMMapFlags,
+       gFd, offset);
   GRANARY_ASSERT(!errno && "Unable to map new end of code cache.");
 
   gCacheSize += os::kPageSize;
@@ -108,7 +123,7 @@ static void ResizeCache(void) {
 
 static void InitInstrumentation(void) {
   GRANARY_IF_ASSERT( errno = 0; )
-  mmap64(gBegin, os::kPageSize, PROT_READ | PROT_WRITE,
+  mmap(gBegin, os::kPageSize, PROT_READ | PROT_WRITE,
          MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS | MAP_32BIT, -1, 0);
   GRANARY_ASSERT(!errno && "Unable to map instrumentation page.");
 
@@ -153,9 +168,15 @@ void Init(void) {
   }
 
   GRANARY_IF_ASSERT( errno = 0; )
-  gBegin = mmap64(nullptr, k250MiB, PROT_NONE,
-                  MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_32BIT,
-                  -1, 0);
+#if HAS_MAP32BIT
+  gBegin = mmap(nullptr, k250MiB, PROT_NONE,
+      MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_32BIT,
+      -1, 0);
+#else
+  gBegin = mmap(reinterpret_cast<void *>(0x70000000), k250MiB, PROT_NONE,
+                MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED,
+                -1, 0);
+#endif
   GRANARY_ASSERT(!errno && "Unable to map address space for code cache.");
 
   // The first page of the code cache is for instrumentation.
@@ -176,14 +197,14 @@ void Init(void) {
     // Scale the cache file out to a multiple of the page size so that we can
     // mmap it.
     GRANARY_IF_ASSERT( errno = 0; )
-    ftruncate64(gFd, static_cast<off64_t>(scaled_cache_size));
+    ftruncate(gFd, static_cast<off_t>(scaled_cache_size));
     GRANARY_ASSERT(!errno && "Unable to scale the code cache file.");
 
     // Bring the old cache into memory, although scale it out. We'll keep as
     // many of the original cache pages non-writable, just in case this helps
     // us to catch spurious bugs.
     GRANARY_IF_ASSERT( errno = 0; )
-    mmap64(gBeginSync, scaled_cache_size, PROT_READ | PROT_WRITE | PROT_EXEC,
+    mmap(gBeginSync, scaled_cache_size, PROT_READ | PROT_WRITE | PROT_EXEC,
            gMMapFlags, gFd, 0);
     GRANARY_ASSERT(!errno && "Unable to map the scaled code cache file.");
 
@@ -198,7 +219,7 @@ void Exit(void) {
   auto actual_cache_size = gNextBlockPC - gBeginSyncPC;
   msync(gBeginSync, gCacheSize, MS_SYNC | MS_INVALIDATE);
   munmap(gBegin, k250MiB);
-  ftruncate64(gFd, actual_cache_size);
+  ftruncate(gFd, actual_cache_size);
   close(gFd);
 }
 

@@ -85,8 +85,8 @@ static void DebugRanges(const std::vector<PageRange32> &pages,
 }  // namespace
 
 Process32::Process32(const Snapshot32 *snapshot)
-    : base(mmap64(nullptr, kProcessSize, PROT_NONE,
-                  MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0)),
+    : base(mmap(nullptr, kProcessSize, PROT_NONE,
+                MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0)),
       pid(snapshot->exe_num),
       text_base(kMaxAddress),
       fault_can_recover(false),
@@ -372,8 +372,8 @@ Addr32 Process32::Allocate(size_t num_bytes, PagePerms perms) {
 
   auto addr64 = ConvertAddress(addr32);
   GRANARY_IF_ASSERT( errno = 0; )
-  auto ret = mmap64(addr64, num_bytes, PermsToProt(perms),
-                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+  auto ret = mmap(addr64, num_bytes, PermsToProt(perms),
+                  MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
   GRANARY_ASSERT(!errno && "Unable to map newly allocated process32 memory.");
   if (ret != addr64) return 0;
 

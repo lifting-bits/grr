@@ -29,6 +29,10 @@
 
 #include "third_party/md5/md5.h"
 
+#ifndef O_LARGEFILE
+# define O_LARGEFILE 0
+#endif
+
 DEFINE_bool(about, false, "Show the compile date of grr.");
 
 DEFINE_string(snapshot_dir, "", "Directory where snapshots are stored.");

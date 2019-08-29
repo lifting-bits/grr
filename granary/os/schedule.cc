@@ -67,7 +67,9 @@ static void signal(int signum, SignalHandler *handler) {
   struct sigaction sig;
   sig.sa_sigaction = handler;
   sig.sa_flags = SA_SIGINFO;
+#ifndef __APPLE__
   sig.sa_restorer = sys_sigreturn;
+#endif
   sigfillset(&(sig.sa_mask));
   sigaction(signum, &sig, nullptr);
 }
@@ -125,7 +127,13 @@ static void CatchFault(int sig, siginfo_t *si, void *context_) {
   cache::ClearInlineCache();
 
   auto context = reinterpret_cast<ucontext_t *>(context_);
-  granary_crash_pc = context->uc_mcontext.gregs[REG_RIP];
+#ifdef __APPLE__
+  auto &pc_ref = context->uc_mcontext->__ss.__rip;
+#else
+  auto &pc_ref = context->uc_mcontext.gregs[REG_RIP];
+#endif
+
+  granary_crash_pc = pc_ref;
   granary_crash_addr = reinterpret_cast<intptr_t>(si->si_addr);
 
   auto process = os::gProcess;
@@ -133,8 +141,7 @@ static void CatchFault(int sig, siginfo_t *si, void *context_) {
   process->signal = sig;
 
   const auto fault_addr64 = reinterpret_cast<uintptr_t>(si->si_addr);
-  const auto fault_rip64 = static_cast<uintptr_t>(
-      context->uc_mcontext.gregs[REG_RIP]);
+  const auto fault_rip64 = static_cast<uintptr_t>(pc_ref);
 
   GRANARY_ASSERT(process->IsProcessAddress(fault_addr64));
 
@@ -170,8 +177,8 @@ static void CatchFault(int sig, siginfo_t *si, void *context_) {
   process->fault_addr = fault_addr32;
   process->fault_base_addr = base;
   process->fault_index_addr = index;
-  context->uc_mcontext.gregs[REG_RIP] = reinterpret_cast<greg_t>(
-      granary_bad_block);
+  pc_ref = static_cast<decltype(pc_ref + pc_ref)>(
+      reinterpret_cast<uintptr_t>(granary_bad_block));
 
   GRANARY_DEBUG(
       std::cerr
@@ -189,9 +196,14 @@ static void CatchCrash(int sig, siginfo_t *, void *context_) {
   GRANARY_DEBUG( std::cerr << "  CatchCrash " << sig << std::endl; )
   auto process = os::gProcess;
   auto context = reinterpret_cast<ucontext_t *>(context_);
+#ifdef __APPLE__
+  auto &pc_ref = context->uc_mcontext->__ss.__rip;
+#else
+  auto &pc_ref = context->uc_mcontext.gregs[REG_RIP];
+#endif
 
   if (!process) {
-    granary_crash_pc = context->uc_mcontext.gregs[REG_RIP];
+    granary_crash_pc = pc_ref;
     GRANARY_ASSERT(false && "os::gProcess in CatchCrash is nullptr.");
   }
 
@@ -202,13 +214,12 @@ static void CatchCrash(int sig, siginfo_t *, void *context_) {
     return;
   }
 
-  const auto fault_rip64 = static_cast<uintptr_t>(
-      context->uc_mcontext.gregs[REG_RIP]);
+  const auto fault_rip64 = static_cast<uintptr_t>(pc_ref);
 
   // Make sure we faulted within the code cache.
   GRANARY_ASSERT(cache::IsCachePC(fault_rip64));
-  context->uc_mcontext.gregs[REG_RIP] = reinterpret_cast<greg_t>(
-      granary_bad_block);
+  pc_ref = static_cast<decltype(pc_ref + pc_ref)>(
+      reinterpret_cast<uintptr_t>(granary_bad_block));
 }
 
 static bool gHasSigHandlers = false;
@@ -222,7 +233,9 @@ static struct { int sig; SignalHandler *handler; } gSignalHandlers[] = {
   {SIGSEGV, CatchFault},
   {SIGBUS, CatchCrash},
   {SIGFPE, CatchCrash},
+#ifdef SIGSTKFLT
   {SIGSTKFLT, CatchCrash},
+#endif
   {SIGTRAP, CatchCrash},
   {SIGILL, CatchCrash}
 };
@@ -267,7 +280,6 @@ static void Schedule(Process32Group &processes, FileTable &files) {
       }
 
       PushProcess32 set_process(process);
-
 
       cache::ClearInlineCache();
 

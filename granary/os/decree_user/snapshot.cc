@@ -10,7 +10,9 @@
 #include <sys/mman.h>
 #include <sys/ptrace.h>
 #include <sys/resource.h>
+#ifndef __APPLE__
 #include <sys/sendfile.h>
+#endif
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -23,6 +25,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifndef O_LARGEFILE
+# define O_LARGEFILE 0
+#endif
+
+#ifndef MAP_POPULATE
+# define MAP_POPULATE 0
+#endif
+
 #include "granary/os/process.h"
 
 DECLARE_string(snapshot_dir);
@@ -33,18 +43,23 @@ namespace os {
 namespace {
 static char gSnapshotPath[128] = {'\0'};
 static char gMem[kPageSize] = {'\0'};
-}  // namespace
+
+#ifndef __APPLE__
+
+enum {
+  kMaxNumAttempts = 100
+};
 
 // Copy the memory from one process directly into a memory mapped file.
-void SnapshotRange(const detail::MappedRange32 &source_range, int source_fd,
-                   int dest_fd) {
+static void SnapshotRange(const detail::MappedRange32 &source_range,
+                          int source_fd, int dest_fd) {
   auto desired_size = static_cast<ssize_t>(source_range.Size());
   for (ssize_t copied_size = 0; copied_size < desired_size; ) {
     auto size = std::min(static_cast<size_t>(desired_size - copied_size),
                          sizeof gMem);
 
     GRANARY_IF_ASSERT( errno = 0; )
-    lseek64(source_fd, static_cast<off64_t>(source_range.begin) + copied_size,
+    lseek(source_fd, static_cast<off_t>(source_range.begin) + copied_size,
             SEEK_SET);
     GRANARY_ASSERT(!errno && "Unable to seek to mapped memory range.");
 
@@ -62,10 +77,6 @@ void SnapshotRange(const detail::MappedRange32 &source_range, int source_fd,
   }
 }
 
-namespace {
-enum {
-  kMaxNumAttempts = 100
-};
 
 // Enable tracing of the target binary.
 static void EnableTracing(void) {
@@ -219,27 +230,6 @@ static std::vector<detail::MappedRange32> GetRanges(pid_t pid, AppPC32 eip) {
   return ranges;
 }
 
-// Open the snapshot file.
-static int OpenSnapshotFile(int exe_num, bool create) {
-  sprintf(gSnapshotPath, "%s/grr.snapshot.%d.persist",
-          FLAGS_snapshot_dir.c_str(), exe_num);
-
-  auto flags = 0;
-  auto mode = 0;
-  if (create) {
-    flags = O_CREAT | O_TRUNC | O_RDWR | O_LARGEFILE;
-    mode = 0666;
-  } else {
-    flags = O_RDONLY | O_LARGEFILE;
-  }
-
-  GRANARY_IF_ASSERT( errno = 0; )
-  auto fd = open(gSnapshotPath, flags, mode);
-  GRANARY_ASSERT(!errno && "Unable to open the snapshot file.");
-
-  return fd;
-}
-
 static char * const gArgv[] = {nullptr};
 
 // Initialize the snapshot file.
@@ -257,7 +247,7 @@ static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
 
     // Align the file handle to the end of the file.
     GRANARY_IF_ASSERT( errno = 0; )
-    ftruncate64(fd, static_cast<off64_t>(sizeof(detail::Snapshot32File)));
+    ftruncate(fd, static_cast<off_t>(sizeof(detail::Snapshot32File)));
     GRANARY_ASSERT(!errno && "Unable to scale snapshot file.");
 
     auto file = new (mmap(nullptr, sizeof(detail::Snapshot32File),
@@ -338,10 +328,10 @@ static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
 
     // Align the file handle to the end of the file.
     GRANARY_IF_ASSERT( errno = 0; )
-    ftruncate64(fd, static_cast<off64_t>(sizeof(detail::Snapshot32File)));
+    ftruncate(fd, static_cast<off_t>(sizeof(detail::Snapshot32File)));
     GRANARY_ASSERT(!errno && "Unable to scale snapshot file (1)");
 
-    lseek64(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_END);
     GRANARY_ASSERT(!errno && "Unable to seek to end of snapshot file (1)");
 
     // Copy the memory into the snapshot file.
@@ -352,7 +342,7 @@ static void InitSnapshotFile(const char *exe_name, int exe_num, int fd) {
     }
 
     // Add in the stack and the magic page.
-    ftruncate64(fd, static_cast<off64_t>(snapshot_offset));
+    ftruncate(fd, static_cast<off_t>(snapshot_offset));
     GRANARY_ASSERT(!errno && "Unable to scale snapshot file (2)");
 
     // Clean up.
@@ -390,11 +380,11 @@ static std::string CopyExecutableFile(const char *exe_path, int exe_num) {
   new_path += std::to_string(exe_num);
 
   auto path = new_path.c_str();
-  auto new_fd = open64(path, O_CREAT | O_CLOEXEC | O_RDWR | O_TRUNC, 0777);
+  auto new_fd = open(path, O_CREAT | O_CLOEXEC | O_RDWR | O_TRUNC, 0777);
   GRANARY_ASSERT(!errno && "Could not create copy of the executable.");
 
   struct stat64 stat;
-  fstat64(fd, &stat);
+  fstat(fd, &stat);
   GRANARY_ASSERT(!errno && "Could not `fstat` the original executable.");
 
   write(new_fd, kELFHeader, kELFHeaderLen);
@@ -405,7 +395,7 @@ static std::string CopyExecutableFile(const char *exe_path, int exe_num) {
            static_cast<size_t>(stat.st_size - kELFHeaderLen));
   GRANARY_ASSERT(!errno && "Could not copy the original executable.");
 
-  lseek64(new_fd, 0, SEEK_SET);
+  lseek(new_fd, 0, SEEK_SET);
   GRANARY_ASSERT(!errno && "Could not seek to beginning of new executable.");
 
   // Make ELF binary executable.
@@ -420,6 +410,29 @@ static std::string CopyExecutableFile(const char *exe_path, int exe_num) {
   return new_path;
 }
 
+#endif  // !defined(__APPLE__)
+
+// Open the snapshot file.
+static int OpenSnapshotFile(int exe_num, bool create) {
+  sprintf(gSnapshotPath, "%s/grr.snapshot.%d.persist",
+          FLAGS_snapshot_dir.c_str(), exe_num);
+
+  auto flags = 0;
+  auto mode = 0;
+  if (create) {
+    flags = O_CREAT | O_TRUNC | O_RDWR | O_LARGEFILE;
+    mode = 0666;
+  } else {
+    flags = O_RDONLY | O_LARGEFILE;
+  }
+
+  GRANARY_IF_ASSERT( errno = 0; )
+  auto fd = open(gSnapshotPath, flags, mode);
+  GRANARY_ASSERT(!errno && "Unable to open the snapshot file.");
+
+  return fd;
+}
+
 }  // namespace
 
 // Revives a snapshot file.
@@ -428,7 +441,7 @@ Snapshot32::Snapshot32(int exe_num_)
       exe_num(exe_num_) {
   GRANARY_IF_ASSERT( errno = 0; )
   file = reinterpret_cast<detail::Snapshot32File *>(
-      mmap64(nullptr, sizeof(detail::Snapshot32File),
+      mmap(nullptr, sizeof(detail::Snapshot32File),
              PROT_READ, MAP_POPULATE | MAP_PRIVATE, fd, 0));
   GRANARY_ASSERT(!errno && "Unable to map snapshot file meta-data.");
   GRANARY_ASSERT(file->meta.exe_num == exe_num &&
@@ -437,11 +450,16 @@ Snapshot32::Snapshot32(int exe_num_)
 
 // Creates a snapshot file.
 void Snapshot32::Create(const char *exe_name, int exe_num) {
+#ifdef __APPLE__
+  std::cerr << "Cannot create snapshots on macOS\n";
+  abort();
+#else
   auto exe_path = CopyExecutableFile(exe_name, exe_num);
   auto snapshot_fd = OpenSnapshotFile(exe_num, true);
   auto exe_path_str = exe_path.c_str();
   InitSnapshotFile(exe_path_str, exe_num, snapshot_fd);
   unlink(exe_path_str);
+#endif
 }
 
 // Creates the snapshot from a process.
@@ -463,15 +481,15 @@ void Snapshot32::Create(const Process32 *process) {
   auto temp_snapshot_path = temp_path.c_str();
 
   GRANARY_IF_ASSERT( errno = 0; )
-  auto fd = open64(temp_snapshot_path,
+  auto fd = open(temp_snapshot_path,
                    O_CREAT | O_CLOEXEC | O_RDWR | O_TRUNC, 0666);
   GRANARY_ASSERT(!errno && "Unable to create snapshot file.");
 
-  ftruncate64(fd, static_cast<off64_t>(size));
+  ftruncate(fd, static_cast<off_t>(size));
   GRANARY_ASSERT(!errno && "Unable to scale snapshot file.");
 
   auto file = reinterpret_cast<detail::Snapshot32File *>(
-      mmap64(nullptr, size,
+      mmap(nullptr, size,
              PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   GRANARY_ASSERT(!errno && "Unable to map snapshot file meta-data.");
 

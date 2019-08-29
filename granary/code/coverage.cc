@@ -20,6 +20,9 @@
 
 #include "third_party/md5/md5.h"
 
+#ifndef O_LARGEFILE
+# define O_LARGEFILE 0
+#endif
 
 DECLARE_bool(path_coverage);
 DECLARE_string(coverage_file);
@@ -149,8 +152,8 @@ void InitPathCoverage(void) {
   }
 
   GRANARY_IF_ASSERT( errno = 0; )
-  auto fd = open64(FLAGS_coverage_file.c_str(),
-                   O_RDONLY | O_CLOEXEC | O_CREAT | O_LARGEFILE, 0666);
+  auto fd = open(FLAGS_coverage_file.c_str(),
+                 O_RDONLY | O_CLOEXEC | O_CREAT | O_LARGEFILE, 0666);
   GRANARY_ASSERT(!errno && "Unable to open a coverage file.");
 
   struct stat file_info;
@@ -231,7 +234,7 @@ void ExitPathCoverage(void) {
   auto cov_file = ss.str();
 
   GRANARY_IF_ASSERT( errno = 0; )
-  auto fd = open64(
+  auto fd = open(
       cov_file.c_str(),
       O_RDWR | O_CLOEXEC | O_CREAT | O_LARGEFILE | O_TRUNC,
       0666);

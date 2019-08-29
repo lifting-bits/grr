@@ -1,10 +1,16 @@
 /* Copyright 2015 Peter Goodman, all rights reserved. */
 
+#ifdef __APPLE__
+# define SYMBOL(x) _ ## x
+#else
+# define SYMBOL(x) x
+#endif
+
     .file "granary/arch/x86/branch_tracer.S"
     .intel_syntax noprefix
     .text
 
-    .extern TraceBranchImpl
+    .extern SYMBOL(TraceBranchImpl)
 
     // r15      os::Process32 *     Process32 object.
     // r14      index::Value        Meta-data about this block.
@@ -16,9 +22,8 @@
     // r8       Addr64              64-bit base of 32-bit address space.
     //
     .align 16
-    .globl TraceBranch
-    .type TraceBranch, @function
-TraceBranch:
+    .globl SYMBOL(TraceBranch)
+SYMBOL(TraceBranch):
     .cfi_startproc
 
     pushfq
@@ -41,7 +46,7 @@ TraceBranch:
     mov     edi, dword ptr [r15 + 52]
     mov     esi, r14d
     mov     edx, r10d
-    call    TraceBranchImpl
+    call    SYMBOL(TraceBranchImpl)
 
     pop r15
     pop r14
@@ -62,5 +67,4 @@ TraceBranch:
 
     ret
     .cfi_endproc
-    .size   TraceBranch, .-TraceBranch
     ud2

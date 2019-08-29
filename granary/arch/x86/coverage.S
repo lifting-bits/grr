@@ -1,14 +1,20 @@
 /* Copyright 2015 Peter Goodman, all rights reserved. */
 
+#ifdef __APPLE__
+# define SYMBOL(x) _ ## x
+#else
+# define SYMBOL(x) x
+#endif
+
     .file "granary/arch/x86/coverage.S"
 
     .intel_syntax noprefix
     .text
 
-    .extern gPathEntries
-    .extern gNextPathEntry
-    .extern UpdateCoverageSet
-    .extern gInputIndex
+    .extern SYMBOL(gPathEntries)
+    .extern SYMBOL(gNextPathEntry)
+    .extern SYMBOL(UpdateCoverageSet)
+    .extern SYMBOL(gInputIndex)
 
     // r15      os::Process32 *     Process32 object.
     // r14      index::Value        Meta-data about this block.
@@ -25,23 +31,22 @@
     // Add an entry to the path coverage list. If the list get full, then
     // call into UpdateCoverageSet to flush it and reset.
     .align 16
-    .globl CoverPath
-    .type CoverPath, @function
-CoverPath:
+    .globl SYMBOL(CoverPath)
+SYMBOL(CoverPath):
     .cfi_startproc
     pushfq
 
     // If we haven't read any input then it's not possible to have any
     // input-dependent code coverage.
-    cmp qword ptr [RIP + gInputIndex], 0
-    jz done
+    cmp qword ptr [RIP + SYMBOL(gInputIndex)], 0
+    jz .Ldone
 
-    mov r13d, dword ptr [RIP + gNextPathEntry]
+    mov r13d, dword ptr [RIP + SYMBOL(gNextPathEntry)]
     cmp r13, 4096 * 3 * 4
-    jz update_coverage_map
+    jz .Lupdate_coverage_map
 
-add_entry:
-    lea r11, [RIP + gPathEntries]
+.Ladd_entry:
+    lea r11, [RIP + SYMBOL(gPathEntries)]
     mov r12d, dword ptr [r15 + 52]  // Prev branch EIP
 
     mov dword ptr [r11 + r13 + 0], r12d  // Prev branch EIP.
@@ -50,13 +55,13 @@ add_entry:
     mov dword ptr [r11 + r13 + 12], 1  // Exec count
 
     // Move to the next path entry.
-    add dword ptr [RIP + gNextPathEntry], 4 * 4
+    add dword ptr [RIP + SYMBOL(gNextPathEntry)], 4 * 4
 
-done:
+.Ldone:
     popfq
     ret
 
-update_coverage_map:
+.Lupdate_coverage_map:
     push rax
     push rbx
     push rcx
@@ -79,7 +84,7 @@ update_coverage_map:
     // push [rsp]
     // and rsp, -16
 
-    call    UpdateCoverageSet
+    call    SYMBOL(UpdateCoverageSet)
 
     // pop rsp
     pop r15
@@ -100,11 +105,10 @@ update_coverage_map:
     pop rbx
     pop rax
 
-    mov dword ptr [RIP + gNextPathEntry], 0
+    mov dword ptr [RIP + SYMBOL(gNextPathEntry)], 0
     xor r13, r13
-    jmp add_entry
+    jmp .Ladd_entry
 
     .cfi_endproc
-    .size   CoverPath, .-CoverPath
     ud2
 
