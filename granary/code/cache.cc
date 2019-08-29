@@ -162,7 +162,7 @@ void Init(void) {
 
   GRANARY_IF_ASSERT( errno = 0; )
 
-  const auto begin_loc = reinterpret_cast<uintptr_t>(&Init) + k250MiB;
+  const auto begin_loc = (reinterpret_cast<uintptr_t>(&Init) + k250MiB) & ~4095ULL;
   gBegin = mmap(reinterpret_cast<void *>(begin_loc), k250MiB, PROT_NONE,
                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED,
                 -1, 0);
