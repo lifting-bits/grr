@@ -209,36 +209,56 @@ function GetLLVMVersion
   case ${1} in
     3.5)
       LLVM_VERSION=llvm35
+      USE_HOST_COMPILER=1
       return 0
     ;;
     3.6)
       LLVM_VERSION=llvm36
+      USE_HOST_COMPILER=1
       return 0
     ;;
     3.7)
       LLVM_VERSION=llvm37
+      USE_HOST_COMPILER=1
       return 0
     ;;
     3.8)
       LLVM_VERSION=llvm38
+      USE_HOST_COMPILER=1
       return 0
     ;;
     3.9)
       LLVM_VERSION=llvm39
+      USE_HOST_COMPILER=1
       return 0
     ;;
     4.0)
       LLVM_VERSION=llvm40
+      USE_HOST_COMPILER=1
+      return 0
     ;;
     5.0)
       LLVM_VERSION=llvm50
+      return 0
+    ;;
+    6.0)
+      LLVM_VERSION=llvm60
+      return 0
+    ;;
+    7.0)
+      LLVM_VERSION=llvm70
+      return 0
+    ;;
+    8.0)
+      LLVM_VERSION=llvm80
+      return 0
     ;;
     *)
       # unknown option
-      printf "[x] Unknown LLVM version ${1}.\n"
-      exit 1
+      echo "[x] Unknown LLVM version ${1}."
     ;;
   esac
+  return 1
 }
 
 function main
