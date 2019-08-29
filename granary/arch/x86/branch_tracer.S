@@ -1,14 +1,9 @@
 /* Copyright 2015 Peter Goodman, all rights reserved. */
 
-#ifdef __APPLE__
-# define SYMBOL(x) _ ## x
-#else
-# define SYMBOL(x) x
-#endif
+#include "assembly.S"
 
     .file "granary/arch/x86/branch_tracer.S"
-    .intel_syntax noprefix
-    .text
+    TEXT_SECTION
 
     .extern SYMBOL(TraceBranchImpl)
 

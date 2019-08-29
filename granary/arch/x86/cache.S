@@ -1,20 +1,17 @@
 /* Copyright 2015 Peter Goodman, all rights reserved. */
 
-#ifdef __APPLE__
-# define SYMBOL(x) _ ## x
-#else
-# define SYMBOL(x) x
-#endif
+#include "assembly.S"
 
     .file "granary/arch/x86/cache.S"
-    .intel_syntax noprefix
 
-    .data
+    DATA_SECTION
+
 SYMBOL(granary_stack_pointer):
     .quad 0
 
     .extern SYMBOL(gInlineCache)
 
+    TEXT_SECTION
 
     // Used to return from the code cache with a bad block.
     .align 16

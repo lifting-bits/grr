@@ -1,14 +1,10 @@
 /* Copyright 2015 Peter Goodman, all rights reserved. */
 
-#ifdef __APPLE__
-# define SYMBOL(x) _ ## x
-#else
-# define SYMBOL(x) x
-#endif
+#include "assembly.S"
 
     .file "granary/arch/x86/syscall.S"
-    .intel_syntax noprefix
-    .text
+
+    TEXT_SECTION
 
     // NextAppPC32 cache::Call(os::Process32 *process, CachePC block);
     .align 16
