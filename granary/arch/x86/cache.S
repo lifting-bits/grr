@@ -115,6 +115,9 @@ SYMBOL(_ZN7granary5cache4CallEPNS_2os9Process32EPh):
     jmp .Lexit_cache
 
 .Lre_enter_cache:
+    movsxd r14, r14d
+    lea r11, [RIP + SYMBOL(gInlineCache)]
+    lea r14, [r14 + r11]
     pop r11
     popfq
     jmp .Lenter_cache

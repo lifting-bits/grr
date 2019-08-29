@@ -44,7 +44,7 @@ enum : unsigned {
 
 struct CacheEntry {
   AppPC32 app_pc;
-  uint32_t cache_pc;
+  uint32_t cache_pc_disp_from_inline_cache;
 };
 
 extern "C" {
@@ -137,9 +137,11 @@ void InsertIntoInlineCache(const os::Process32 *process, index::Key key,
   auto offset = process->last_branch_pc % kNumEntries;
   auto probe = (gNextInlineCacheEntry[offset]++) % kProbesPerEntry;
   auto &entry = gInlineCache[offset + probe];
+  auto cache_pc = reinterpret_cast<intptr_t>(gBeginSyncPC) + block.cache_offset;
+  auto first_entry = reinterpret_cast<intptr_t>(&(gInlineCache[0]));
   entry.app_pc = key.pc32;
-  entry.cache_pc = static_cast<uint32_t>(
-      reinterpret_cast<intptr_t>(gBeginSyncPC) + block.cache_offset);
+  entry.cache_pc_disp_from_inline_cache = static_cast<uint32_t>(
+      cache_pc - first_entry);
 }
 
 void ClearInlineCache(void) {
