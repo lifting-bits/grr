@@ -1,6 +1,9 @@
 /* Copyright 2015 Peter Goodman, all rights reserved. */
 
 #include "granary/os/process.h"
+
+#include <setjmp.h>
+
 #include "granary/os/snapshot.h"
 
 #include "granary/code/cache.h"
@@ -8,11 +11,19 @@
 
 namespace granary {
 namespace os {
+namespace {
+static sigjmp_buf gSigRecoverState;
+}  // namespace
 
 // Tries to do a write of a specific size.
 bool Process32::DoTryWrite(uint32_t *ptr, uint32_t val) const {
   PushProcess32 set_process(this);
   fault_can_recover = true;
+#ifdef __APPLE__
+  if (sigsetjmp(gSigRecoverState, true)) {
+    *ptr = val;
+  }
+#else
   __asm__ __volatile__ (
     "jmp 1f;"
     ".align 16, 0x90;"
@@ -25,6 +36,7 @@ bool Process32::DoTryWrite(uint32_t *ptr, uint32_t val) const {
     : "r"(val), "r"(ptr)
     : "memory"
   );
+#endif
   auto ret = fault_can_recover;
   fault_can_recover = false;
   return ret;
@@ -33,6 +45,11 @@ bool Process32::DoTryWrite(uint32_t *ptr, uint32_t val) const {
 bool Process32::DoTryWrite(uint16_t *ptr, uint16_t val) const {
   PushProcess32 set_process(this);
   fault_can_recover = true;
+#ifdef __APPLE__
+  if (sigsetjmp(gSigRecoverState, true)) {
+    *ptr = val;
+  }
+#else
   __asm__ __volatile__ (
     "jmp 1f;"
     ".align 16, 0x90;"
@@ -45,6 +62,7 @@ bool Process32::DoTryWrite(uint16_t *ptr, uint16_t val) const {
     : "r"(val), "r"(ptr)
     : "memory"
   );
+#endif
   auto ret = fault_can_recover;
   fault_can_recover = false;
   return ret;
@@ -53,6 +71,11 @@ bool Process32::DoTryWrite(uint16_t *ptr, uint16_t val) const {
 bool Process32::DoTryWrite(uint8_t *ptr, uint8_t val) const {
   PushProcess32 set_process(this);
   fault_can_recover = true;
+#ifdef __APPLE__
+  if (sigsetjmp(gSigRecoverState, true)) {
+    *ptr = val;
+  }
+#else
   __asm__ __volatile__ (
     "jmp 1f;"
     ".align 16, 0x90;"
@@ -65,6 +88,7 @@ bool Process32::DoTryWrite(uint8_t *ptr, uint8_t val) const {
     : "r"(val), "r"(ptr)
     : "memory"
   );
+#endif
   auto ret = fault_can_recover;
   fault_can_recover = false;
   return ret;
@@ -74,6 +98,11 @@ bool Process32::DoTryWrite(uint8_t *ptr, uint8_t val) const {
 bool Process32::DoTryRead(const uint32_t *ptr, uint32_t *val) const {
   PushProcess32 set_process(this);
   fault_can_recover = true;
+#ifdef __APPLE__
+  if (sigsetjmp(gSigRecoverState, true)) {
+    *val = *ptr;
+  }
+#else
   __asm__ __volatile__ (
     "jmp 1f;"
     ".align 16, 0x90;"
@@ -87,6 +116,7 @@ bool Process32::DoTryRead(const uint32_t *ptr, uint32_t *val) const {
     : "r"(ptr), "r"(val)
     : "r12", "memory"
   );
+#endif
   auto ret = fault_can_recover;
   fault_can_recover = false;
   return ret;
@@ -95,6 +125,11 @@ bool Process32::DoTryRead(const uint32_t *ptr, uint32_t *val) const {
 bool Process32::DoTryRead(const uint16_t *ptr, uint16_t *val) const {
   PushProcess32 set_process(this);
   fault_can_recover = true;
+#ifdef __APPLE__
+  if (sigsetjmp(gSigRecoverState, true)) {
+    *val = *ptr;
+  }
+#else
   __asm__ __volatile__ (
     "jmp 1f;"
     ".align 16, 0x90;"
@@ -108,6 +143,7 @@ bool Process32::DoTryRead(const uint16_t *ptr, uint16_t *val) const {
     : "r"(ptr), "r"(val)
     : "r12", "memory"
   );
+#endif
   auto ret = fault_can_recover;
   fault_can_recover = false;
   return ret;
@@ -116,6 +152,11 @@ bool Process32::DoTryRead(const uint16_t *ptr, uint16_t *val) const {
 bool Process32::DoTryRead(const uint8_t *ptr, uint8_t *val) const {
   PushProcess32 set_process(this);
   fault_can_recover = true;
+#ifdef __APPLE__
+  if (sigsetjmp(gSigRecoverState, true)) {
+    *val = *ptr;
+  }
+#else
   __asm__ __volatile__ (
     "jmp 1f;"
     ".align 16, 0x90;"
@@ -129,6 +170,7 @@ bool Process32::DoTryRead(const uint8_t *ptr, uint8_t *val) const {
     : "r"(ptr), "r"(val)
     : "r12", "memory"
   );
+#endif
   auto ret = fault_can_recover;
   fault_can_recover = false;
   return ret;
@@ -136,16 +178,18 @@ bool Process32::DoTryRead(const uint8_t *ptr, uint8_t *val) const {
 
 // Returns true if a signal handler can recover from this fault by returning.
 bool Process32::RecoverFromTryReadWrite(ucontext_t *context) const {
-  if (!fault_can_recover) return false;
+  if (!fault_can_recover) {
+    return false;
+  }
   fault_can_recover = false;
 #ifdef __APPLE__
-  auto &pc = context->uc_mcontext->__ss.__rip;
+  siglongjmp(gSigRecoverState, false);
 #else
   auto &pc = context->uc_mcontext.gregs[REG_RIP];
-#endif
   GRANARY_ASSERT(pc == (pc & ~15LL) && "Crash wasn't in a TryRead/TryWrite.");
   pc += 16LL;
   return true;
+#endif
 }
 
 // Initialize the register state.

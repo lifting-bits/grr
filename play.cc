@@ -326,12 +326,11 @@ extern "C" int main(int argc, char **argv, char **) {
 
   if (FLAGS_persist) {
     if (FLAGS_persist_dir.empty()) {
-      std::cerr << "Must provide a unique path to a directory where the "
-                << "runtime state can be persisted." << std::endl;
-      return EXIT_FAILURE;
+      FLAGS_persist_dir = FLAGS_snapshot_dir;
+    } else {
+      mkdir(FLAGS_persist_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      errno = 0;  // Suppress failures to make the directory.
     }
-    mkdir(FLAGS_persist_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    errno = 0;  // Suppress failures to make the directory.
   }
 
   // Make sure we have a place to output testcases, as well as a special

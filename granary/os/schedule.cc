@@ -17,6 +17,12 @@
 #include <signal.h>
 #include <gflags/gflags.h>
 
+DEFINE_bool(debug_print_faults, false,
+        "Print out information about the faulting memory locations");
+
+DEFINE_bool(exit_on_fault, false,
+         "Exit if a fault has occurred.");
+
 namespace granary {
 namespace os {
 namespace {
@@ -129,8 +135,10 @@ static void CatchFault(int sig, siginfo_t *si, void *context_) {
   auto context = reinterpret_cast<ucontext_t *>(context_);
 #ifdef __APPLE__
   auto &pc_ref = context->uc_mcontext->__ss.__rip;
+  auto emulated_pc = context->uc_mcontext->__ss.__r10;
 #else
   auto &pc_ref = context->uc_mcontext.gregs[REG_RIP];
+  auto emulated_pc = context->uc_mcontext.gregs[REG_R10];
 #endif
 
   granary_crash_pc = pc_ref;
@@ -180,13 +188,22 @@ static void CatchFault(int sig, siginfo_t *si, void *context_) {
   pc_ref = static_cast<decltype(pc_ref + pc_ref)>(
       reinterpret_cast<uintptr_t>(granary_bad_block));
 
-  GRANARY_DEBUG(
-      std::cerr
-          << "Fault reading [" << std::hex << fault_addr32 << "] = ["
-          << std::hex << base
-          << " + (" << std::hex << index
-          << " * " << std::dec << scale
-          << ") + " << std::hex << disp << "]" << std::endl; )
+  if (FLAGS_debug_print_faults) {
+    std::cerr
+        << "Fault at " << std::hex << static_cast<uint32_t>(emulated_pc)
+        << " accessing [" << fault_addr32 << " [" << fault_addr32 << "] = ["
+        << std::hex << base
+        << " + (" << std::hex << index
+        << " * " << std::dec << scale
+        << ") + " << std::hex << disp << "]" << std::endl;
+  }
+
+  if (FLAGS_exit_on_fault) {
+    gSigTermSignal = sig;
+    gSigTermStateValid = false;
+    gIsRunning = false;
+    siglongjmp(gSigTermState, false);
+  }
 }
 
 // Catch a crash.
